@@ -198,6 +198,8 @@ h4.grp{grid-column:1/-1;margin:14px 0 2px;font:500 11px var(--f-body);letter-spa
 .sortrow select{min-height:44px}
 .cards .tile{content-visibility:auto;contain-intrinsic-size:auto 330px}
 
+/* Appli installée (iPhone) : le contenu démarre sous la barre d'état, on le décale */
+header.top{top:0;padding-top:calc(16px + env(safe-area-inset-top,0px))}body{padding-bottom:env(safe-area-inset-bottom,0px)}
 </style>
 </head>
 <body>
