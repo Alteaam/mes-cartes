@@ -1072,9 +1072,17 @@ function issuesOf(c) {
 }
 
 // ---------- Création de listes (joueurs, marques…) et lecture IA appliquée à un brouillon ----------
+// Collections : nom + année affichés « nom année ». On nettoie « Select (2025-26) » et on évite le doublon d'année.
+const cleanColl = (name, year) => {
+  name = String(name).replace(/\s*\((\d{4}(?:[-/]\d{2,4})?)\)\s*/g, ' $1 ').replace(/\s+/g, ' ').trim(); year = String(year || '').trim();
+  if (year && name.toLowerCase().includes(year.toLowerCase())) year = '';
+  return { name, year };
+};
+const collKey = x => (x.name + ' ' + (x.year || '')).replace(/\s+/g, ' ').trim().toLowerCase();
 async function upsertGlobal(t, name, year = '') {
   name = name.trim(); year = (year || '').trim();
-  const ex = lists[t].find(x => x.name.toLowerCase() === name.toLowerCase() && (t !== 'collections' || (x.year || '') === year));
+  if (t === 'collections') ({ name, year } = cleanColl(name, year));
+  const ex = lists[t].find(x => t === 'collections' ? collKey(x) === collKey({ name, year }) : x.name.toLowerCase() === name.toLowerCase());
   if (ex) return ex;
   const rec = t === 'collections' ? { name, year } : { name };
   const id = Store.newId(); await Store.save(t, id, rec);
@@ -1093,7 +1101,7 @@ async function applyAI(c, d) {
 }
 function knownText() {
   const cut = a => [...new Set(a)].slice(0, 80).join(' ; ') || '—';
-  return `collections : ${cut(lists.collections.map(x => x.name + (x.year ? ' (' + x.year + ')' : '')))} | marques : ${cut(lists.brands.map(x => x.name))} | équipes : ${cut(lists.teams.map(x => x.name))} | sports : ${cut(lists.sports.map(x => x.name))} | parallèles : ${cut(lists.parallels.map(x => x.name))} | joueurs : ${cut(lists.players.map(x => x.name))}`;
+  return `collections : ${cut(lists.collections.map(x => x.name + (x.year ? ' ' + x.year : '')))} | marques : ${cut(lists.brands.map(x => x.name))} | équipes : ${cut(lists.teams.map(x => x.name))} | sports : ${cut(lists.sports.map(x => x.name))} | parallèles : ${cut(lists.parallels.map(x => x.name))} | joueurs : ${cut(lists.players.map(x => x.name))}`;
 }
 const blankDraft = () => ({ player_id: null, team_id: null, sport_id: null, brand_id: null, collection_id: null, parallel_id: null, card_number: '', print_run: null, serial_number: null, is_rookie: false, is_auto: false, is_memorabilia: false, notes: '', is_graded: false, grader: '', grade_value: '', cert_number: '', price_paid: null, bought_at: '', binder_id: null, favorite: false });
 
@@ -1517,7 +1525,8 @@ async function viewForm(id, my) {
   }
   async function upsertEntry(t, name, year = '') {
     name = name.trim(); year = (year || '').trim();
-    const ex = lists[t].find(x => x.name.toLowerCase() === name.toLowerCase() && (t !== 'collections' || (x.year || '') === year));
+    if (t === 'collections') ({ name, year } = cleanColl(name, year));
+    const ex = lists[t].find(x => t === 'collections' ? collKey(x) === collKey({ name, year }) : x.name.toLowerCase() === name.toLowerCase());
     if (ex) return ex;
     const rec = t === 'collections' ? { name, year } : { name };
     const id = Store.newId();
