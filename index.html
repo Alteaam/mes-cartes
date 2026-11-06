@@ -1,0 +1,1813 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#04060c">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mes cartes">
+<title>Mes cartes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+html{background:#04060c}body{margin:0}
+/* Mise en page : une colonne pensée pour le téléphone. Noir bleuté, texte clair, filets fins ; le bleu cobalt ne sert (thème A « Cobalt nuit ») — ancien thème noir/orange : style.noir-orange.css ; il ne sert que pour la lecture par l'IA et le socle de la vitrine, le doré pour la numérotation. */
+:root{
+  --bg:#04060c; --bg2:#0a0f1c; --bg3:#121a2e; --line:#172037;
+  --text:#eef3ff; --mute:#8693b0; --accent:#2f6bff; --on-accent:#fff;
+  --ember:#3d7bff; --ember2:#6aa3ff; --gold:#cdb27a; --err:#ff6b5e; --ok:#7bc47f;
+  --danger-bg:transparent; --danger-fg:#ff8d82; --err-bg:#1a0c0a; --err-fg:#ffd2cc; --ok-bg:#0b1a10; --ok-fg:#cdeed0;
+  --f-display:'Sora',system-ui,sans-serif; --f-body:'Sora',system-ui,sans-serif; --f-mono:'IBM Plex Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:16px;overflow-x:hidden}
+body{margin:0;padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-height:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.mono{font-family:var(--f-mono)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:10px;padding:16px 0 14px;background:var(--bg);border-bottom:1px solid var(--line)}
+header.top h1{font-size:21px;font-weight:700;letter-spacing:-.02em;flex:1;color:var(--text);cursor:pointer}
+main{padding:20px 0 48px;max-width:760px;margin:0 auto}
+.btn{appearance:none;border:1px solid #2e2e2e;border-radius:12px;padding:14px 18px;font:500 15px var(--f-body);letter-spacing:0;color:var(--text);background:transparent;min-height:50px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{border-color:#555}
+.btn:active{transform:scale(.98)}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.tile:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn.primary:hover{background:#e6e6e6}
+.btn.danger{background:var(--danger-bg);border-color:#3a1c18;color:var(--danger-fg)}
+.btn.small{min-height:40px;padding:8px 14px;font-size:14px;border-radius:10px}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.5;pointer-events:none}
+input,select,textarea{width:100%;font:16px var(--f-body);color:var(--text);background:var(--bg2);border:1px solid #2a2a2a;border-radius:10px;padding:12px;min-height:48px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--text)}
+textarea{min-height:90px;resize:vertical}
+label.l{display:block;font-size:11px;font-weight:500;color:var(--mute);margin:0 0 6px;text-transform:uppercase;letter-spacing:.1em}
+.field{margin-bottom:14px}
+.field.ai input,.field.ai select,.field.ai textarea,.field.ai.chk,label.chk.ai{border-color:var(--ember);box-shadow:0 0 0 1px var(--ember)}
+.row{display:flex;gap:8px}
+.row>*{min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.search{margin-bottom:14px}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:560px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.tile{background:var(--bg2);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;transition:border-color .2s}
+.tile:hover{border-color:#4a4a4a}
+.tile .im{aspect-ratio:63/88;background:#0a0f1c;display:flex;align-items:center;justify-content:center}
+.tile img{width:100%;height:100%;object-fit:contain}
+.tile .t{padding:10px 12px 12px;font-size:12.5px;line-height:1.4;color:#d4d4d4;overflow-wrap:anywhere}
+.empty{text-align:center;color:var(--mute);padding:44px 6px;line-height:1.5}
+.empty b{display:block;font:700 24px var(--f-display);color:var(--text);margin-bottom:8px;letter-spacing:-.02em}
+.card-sec{background:transparent;border:1px solid var(--line);border-radius:14px;padding:18px 16px;margin-bottom:16px}
+.card-sec h3{font:500 11px var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:14px}
+.chk{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1px solid #2a2a2a;border-radius:10px;padding:12px;min-height:48px;cursor:pointer;margin-bottom:8px}
+.chk input{width:22px;height:22px;min-height:0;accent-color:#fff}
+.stamp{display:inline-block;font:600 15px var(--f-mono);color:var(--gold);border:1.5px solid var(--gold);border-radius:6px;padding:3px 10px;background:rgba(205,178,122,.06)}
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:4px 11px;border-radius:99px;border:1px solid #3a3a3a;color:var(--text);margin:0 6px 6px 0;text-transform:uppercase;letter-spacing:.09em}
+.kv{display:grid;grid-template-columns:116px minmax(0,1fr);gap:12px 10px;font-size:15px}
+.kv span:nth-child(odd){color:var(--mute);font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding-top:2px}
+.kv span{overflow-wrap:anywhere}
+.photo-slot{background:var(--bg2);border:1px dashed #333;border-radius:12px;padding:10px;text-align:center}
+.photo-slot .pv{aspect-ratio:63/88;background:#0a0f1c;border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;color:var(--mute);font-size:13px}
+.photo-slot .pv img{width:100%;height:100%;object-fit:contain}
+.photo-slot b{display:block;font:500 11px var(--f-body);letter-spacing:.12em;color:var(--mute);text-transform:uppercase;margin-bottom:8px}
+.note{font-size:13px;color:var(--mute);line-height:1.4;margin:10px 0 0}
+#toast{position:fixed;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:200}
+#toast[hidden]{display:none}
+#toast div{background:var(--err-bg);border:1px solid var(--err);color:var(--err-fg);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+#toast.ok div{background:var(--ok-bg);border-color:var(--ok);color:var(--ok-fg)}
+#toast b{display:block;color:var(--err);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+#toast.ok b{color:var(--ok)}
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(10,7,5,.92);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal{background:var(--bg2);border:1px solid #2a2a2a;border-radius:16px;padding:18px;width:100%;max-width:420px}
+.modal h3{font:700 20px var(--f-display);letter-spacing:-.02em;color:var(--text);margin-bottom:14px}
+.modal p{margin:0 0 14px;line-height:1.45;color:var(--text)}
+.spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ===== Vitrine 3D ===== */
+.vitrine{position:relative;height:430px;margin-bottom:14px;border-radius:16px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;
+  background:radial-gradient(ellipse at 50% 88%,rgba(61,123,255,.30),transparent 52%),radial-gradient(ellipse at 50% 0%,#101a33,transparent 70%),#04060c;border:1px solid var(--line)}
+.persp{position:absolute;inset:0;perspective:1000px}
+.floatwrap{position:absolute;left:50%;top:44%;width:0;height:0;animation:bob 4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-12px)}}
+@media(prefers-reduced-motion:reduce){.floatwrap{animation:none}}
+.rot{position:absolute;left:0;top:0;transform-style:preserve-3d}
+.face{position:absolute;left:calc(var(--w)/-2);top:calc(var(--h)/-2);width:var(--w);height:var(--h);border-radius:10px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:#0d1424;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.face img{width:100%;height:100%;max-width:none;object-fit:cover;display:block;pointer-events:none}
+.face.back{transform:rotateY(180deg)}
+.face .gloss{position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;background:linear-gradient(115deg,transparent calc(var(--gx,50%) - 22%),rgba(255,255,255,.38) var(--gx,50%),transparent calc(var(--gx,50%) + 22%))}
+.face .ph{display:flex;align-items:center;justify-content:center;height:100%;color:var(--mute);font-size:13px}
+.pedestal{position:absolute;left:50%;bottom:42px;width:260px;height:70px;margin-left:-130px;pointer-events:none}
+.pedestal::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(ellipse,rgba(190,215,255,.95) 0%,rgba(61,123,255,.6) 30%,rgba(61,123,255,.14) 60%,transparent 72%);filter:blur(3px)}
+.pedestal::after{content:"";position:absolute;left:18%;right:18%;top:30%;height:40%;border-radius:50%;background:linear-gradient(#1c2a4a,#0a1226);border:1.5px solid var(--ember);box-shadow:0 0 28px var(--ember),inset 0 0 12px rgba(106,163,255,.6)}
+.thumbs{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:10px;z-index:2}
+.thumbs button{width:52px;height:68px;padding:0;border:1.5px solid #333;border-radius:8px;overflow:hidden;background:#0a0f1c;cursor:pointer}
+.thumbs button.on{border-color:var(--text)}
+.thumbs img{width:100%;height:100%;object-fit:cover}
+.hint{position:absolute;top:8px;left:0;right:0;text-align:center;font-size:12px;color:var(--mute);pointer-events:none}
+
+/* ===== Éditeur de détourage ===== */
+.ed{position:fixed;inset:0;z-index:150;background:#000;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.ed .bar{display:flex;gap:8px;padding:10px;flex-wrap:wrap;background:var(--bg2);border-bottom:1px solid var(--line)}
+.ed .bar .btn{flex:1;min-width:0;padding:10px 6px;font-size:14px;min-height:44px}
+.ed .bar .btn.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.ed .stage{flex:1;position:relative;overflow:hidden;touch-action:none}
+.ed canvas.main{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:none}
+.ed canvas.loupe{position:absolute;top:10px;left:10px;width:120px;height:120px;border:2px solid var(--text);border-radius:50%;display:none;background:#000;pointer-events:none}
+.ed .foot{display:flex;gap:8px;padding:10px;background:var(--bg2);border-top:1px solid var(--line)}
+.ed .foot .btn{flex:1}
+.ed .info{text-align:center;font-size:12px;color:var(--mute);padding:6px}
+[hidden]{display:none!important}
+
+.nav{display:flex;gap:6px;margin:0 0 16px}
+.nav a{flex:1;text-align:center;padding:10px 6px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);text-decoration:none;border-bottom:1px solid var(--line)}
+.nav a.on{color:var(--text);border-bottom-color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{appearance:none;font:500 12px var(--f-body);letter-spacing:.08em;color:var(--mute);background:transparent;border:1px solid #2e2e2e;border-radius:99px;padding:9px 14px;min-height:40px;cursor:pointer}
+.chip.on{color:var(--on-accent);background:var(--accent);border-color:var(--accent)}
+.tile .im{position:relative}.fav{position:absolute;top:6px;right:8px;color:var(--ember2);font-size:16px;text-shadow:0 1px 4px #000}
+.heart{appearance:none;background:transparent;border:1px solid #2e2e2e;border-radius:50%;width:46px;height:46px;flex:none;color:#555;font-size:22px;cursor:pointer}
+.heart.on{color:var(--ember2);border-color:var(--ember2)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stats div{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:14px 8px;text-align:center}
+.stats b{display:block;font:700 28px var(--f-display);letter-spacing:-.02em}
+.stats span{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mute)}
+.bar{position:relative;display:flex;justify-content:space-between;gap:10px;padding:9px 10px;margin-bottom:6px;border-radius:8px;overflow:hidden;background:var(--bg3);font-size:14px}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:#2a2a2a;z-index:0}
+.bar span,.bar b{position:relative;z-index:1}.bar span{min-width:0;overflow-wrap:anywhere}
+.rare{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;font-size:14px}
+.rare b{color:var(--gold);flex:none}
+
+.rows{display:flex;flex-direction:column;gap:10px}
+.lrow{display:flex;align-items:center;gap:12px;position:relative}
+.lrow .im{width:64px;flex:none}.lrow .t{padding:8px 12px 8px 0;flex:1;min-width:0}.fav2{color:var(--ember2);padding-right:14px}
+.wish{display:flex;gap:10px;justify-content:space-between;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line)}
+.wish.got .wt{opacity:.5;text-decoration:line-through}.wt{min-width:0;overflow-wrap:anywhere;flex:1}
+.wb{display:flex;flex-direction:column;gap:6px;flex:none}.wb .btn{min-height:40px;padding:8px 12px;font-size:13px}
+.zoom{position:fixed;inset:0;z-index:160;background:#000;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+.zbar{display:flex;gap:6px;padding:10px;background:var(--bg2);border-bottom:1px solid var(--line)}.zbar .btn{flex:1;min-width:0;padding:8px 4px;font-size:13px;min-height:44px}.zbar .btn.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.zbody{flex:1;overflow:auto;display:flex;justify-content:center;align-items:flex-start;padding:12px}
+.zbody img{max-width:100%;max-height:100%;object-fit:contain;margin:auto}.zbody img.big{max-width:none;max-height:none;width:250%}
+.nav a{font-size:11px;letter-spacing:.1em}
+
+h4.grp{grid-column:1/-1;margin:14px 0 2px;font:500 11px var(--f-body);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);border-bottom:1px solid var(--line);padding-bottom:6px}
+.rows h4.grp{margin:10px 0 0}
+.warnmk{position:absolute;bottom:6px;right:8px;color:var(--gold);font-size:15px;text-shadow:0 1px 4px #000}
+.selbox{position:absolute;top:6px;left:6px;width:24px;height:24px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.55);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}
+.tile.sel{border-color:#fff}.tile.sel .selbox{background:#fff}
+.selbar{position:fixed;left:0;right:0;bottom:0;z-index:120;display:flex;gap:6px;align-items:center;padding:10px max(12px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px));background:var(--bg2);border-top:1px solid var(--line)}
+.selbar span{flex:1;font-size:13px;color:var(--mute);min-width:0}.selbar .btn{min-height:44px;padding:8px 12px;font-size:13px}
+.vfull{position:absolute;top:8px;right:8px;z-index:3;width:40px;height:40px;border-radius:10px;border:1px solid #333;background:rgba(0,0,0,.55);color:var(--text);font-size:18px;cursor:pointer}
+.vitrine.full{position:fixed;inset:0;z-index:140;height:auto;margin:0;border-radius:0;border:0;padding-top:env(safe-area-inset-top,0px)}
+.vitrine.full .floatwrap{top:46%}.vitrine.full .pedestal{bottom:calc(96px + env(safe-area-inset-bottom,0px));width:min(360px,70vw);margin-left:calc(min(360px,70vw)/-2)}
+.vitrine.full .thumbs{bottom:calc(14px + env(safe-area-inset-bottom,0px))}.vitrine.full .hint{top:calc(10px + env(safe-area-inset-top,0px))}
+.vitrine.full .vfull{top:calc(10px + env(safe-area-inset-top,0px));font-size:15px}
+.show{position:fixed;inset:0;z-index:170;background:#000}.show .vitrine.full{z-index:1}
+.show .cap{position:absolute;left:0;right:0;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:2;text-align:center;padding:0 24px;font-size:15px;pointer-events:none}.show .cap span{display:block;color:var(--mute);font-size:12px;margin-top:4px}
+.show .ctl{position:absolute;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:3;display:flex;justify-content:center;gap:8px}.show .ctl .btn{min-height:46px;min-width:52px}
+.brow{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
+.brow .mono{color:var(--mute);overflow-wrap:anywhere;font-size:11.5px}.brow i{grid-column:1/-1;font-style:normal}
+.brow.ok i{color:var(--ok)}.brow.warn i{color:var(--gold)}.brow.bad i{color:var(--err)}
+
+.brow{grid-template-columns:auto 1fr}.bth{display:flex;gap:4px}.bth img{width:44px;height:62px;object-fit:cover;border-radius:5px;border:1px solid var(--line)}
+.bin{display:flex;flex-direction:column;gap:2px;min-width:0}.bact{display:flex;gap:6px;margin-top:6px}.bact .btn{min-height:36px;padding:6px 10px;font-size:12px}
+
+.sortrow{margin-bottom:12px;align-items:center;gap:8px;flex-wrap:nowrap}
+.sortrow select{flex:1 1 0;min-width:0;width:auto}
+.sortrow .cnt{flex:none;color:var(--mute);font-size:13px;white-space:nowrap}
+.sortrow .btn{flex:none;padding:0 12px;min-height:48px;white-space:nowrap}
+
+.lrow2{display:flex;gap:10px;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.ln{min-width:0;display:flex;flex-direction:column;gap:2px;overflow-wrap:anywhere}.ln .mono{color:var(--mute);font-size:12px}
+.lb{display:flex;gap:6px;flex:none}.lb .btn{min-height:40px;padding:6px 10px;font-size:12px}
+
+.tg{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.tg .stamp.sm{font-size:11px;padding:2px 7px;border-width:1px;border-radius:5px}
+.tg .badge.sm{font-size:9.5px;padding:3px 8px;margin:0;letter-spacing:.07em}
+.tg .badge.gd{border-color:var(--gold);color:var(--gold)}
+
+.chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-bottom:10px;margin-right:calc(-1 * max(16px,env(safe-area-inset-right,0px)));padding-right:16px}
+.chips::-webkit-scrollbar{display:none}.chip{flex:none;min-height:36px;padding:7px 13px}
+.filt{margin-bottom:10px}.filt select,.filt1{min-height:44px}.filt1{margin-bottom:10px}
+.sortrow .btn.ico{width:44px;min-height:44px;padding:0;font-size:16px}.sortrow .btn.ico.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.sortrow select{min-height:44px}
+.cards .tile{content-visibility:auto;contain-intrinsic-size:auto 330px}
+
+</style>
+</head>
+<body>
+<header class="top">
+  <h1 id="logo">Mes cartes</h1>
+  <button class="btn small" id="btnOut" hidden>Quitter</button>
+</header>
+<nav class="nav"><a href="#">Collection</a><a href="#stats">Stats</a><a href="#lists">Listes</a></nav>
+<main id="app"><div class="empty"><b>Chargement…</b>Ta collection arrive.</div></main>
+<div id="toast" hidden><div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// ===================== BRANCHEMENTS VERSION GRATUITE (Supabase + Gemini) =====================
+// Colle ici les deux valeurs de Supabase (Project Settings > API).
+const SUPABASE_URL = 'https://bdoavqnhpxxsjmafmzhu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkb2F2cW5ocHh4c2ptYWZtemh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM5Nzc2OTYsImV4cCI6MjEwOTU1MzY5Nn0.M9XA2MjL5Jglzd8JHEmeXSW-jTqHHAYmm5o4g7dYs28';
+const BUCKET = 'card-photos';
+let sb = null, user = null;
+const TABLES = ['players', 'teams', 'sports', 'brands', 'collections', 'parallels', 'binders', 'cards'];
+const sErr = e => {
+  const raw = (e && (e.message || e.error_description || e.msg)) || String(e || '');
+  let code = 'other';
+  if (/failed to fetch|networkerror|load failed|network request/i.test(raw)) code = 'network';
+  else if (/row-level security|42501|permission|not authorized|jwt|401|403/i.test(raw)) code = 'permission';
+  else if (/relation .* does not exist|42P01|schema cache|bucket not found/i.test(raw)) return { code: 'other', message: 'Table ou bucket introuvable : exécute setup.sql en entier dans Supabase. Détail : ' + raw };
+  else if (/payload too large|413|exceeded the maximum/i.test(raw)) code = 'too_large';
+  else if (/mime type|invalid_mime/i.test(raw)) code = 'bad_type';
+  else if (/quota|storage limit|no space/i.test(raw)) code = 'quota';
+  return { code, message: raw };
+};
+const Platform = {
+  signOut: async () => { await sb.auth.signOut(); location.reload(); },
+  async start() {
+    if (SUPABASE_URL.startsWith('COLLE')) {
+      app.innerHTML = '<div class="card-sec"><h3>Configuration manquante</h3><p>Ouvre <span class="mono">index.html</span> et remplace les deux lignes <span class="mono">SUPABASE_URL</span> et <span class="mono">SUPABASE_ANON_KEY</span> par celles de ton projet Supabase (voir LISEZMOI.md).</p></div>';
+      return false;
+    }
+    try {
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { data } = await sb.auth.getSession();
+      user = data.session?.user || null;
+    } catch (e) { fail('Réseau', sErr(e)); return false; }
+    Files.canUpload = true; AI.available = true;
+    if (!user) return await new Promise(res => viewAuth(res));
+    return true;
+  }
+};
+function viewAuth(done) {
+  app.innerHTML = `<div class="card-sec"><h3>Connexion</h3>
+    <div class="field"><label class="l" for="em">E-mail</label><input id="em" type="email" autocomplete="email"></div>
+    <div class="field"><label class="l" for="pw">Mot de passe (6 caractères min.)</label><input id="pw" type="password" autocomplete="current-password"></div>
+    <button class="btn primary block" id="go">Se connecter</button><div style="height:10px"></div>
+    <button class="btn block" id="mk">Créer mon compte</button></div>`;
+  const creds = () => {
+    const email = $('#em').value.trim(), password = $('#pw').value;
+    if (!email || password.length < 6) { toast('Erreur — Validation', 'Indique un e-mail et un mot de passe d\'au moins 6 caractères.'); return null; }
+    return { email, password };
+  };
+  const ok = s => { user = s.user; done(true); };
+  $('#go').onclick = async () => { const c = creds(); if (!c) return; const { data, error } = await sb.auth.signInWithPassword(c); if (error) return fail('Connexion', sErr(error), 'Connexion impossible.'); ok(data.session); };
+  $('#mk').onclick = async () => {
+    const c = creds(); if (!c) return;
+    const { data, error } = await sb.auth.signUp(c);
+    if (error) return fail('Connexion', sErr(error));
+    if (!data.session) return toast('Compte créé', 'Confirme ton e-mail (lien reçu), puis connecte-toi.', true);
+    ok(data.session);
+  };
+}
+async function _loadAll() {
+  const res = await Promise.all(TABLES.map(n => sb.from(n).select('*')));
+  const out = {};
+  res.forEach((r, i) => { if (r.error) throw sErr(r.error); out[TABLES[i]] = r.data; });
+  return out;
+}
+const Store = {
+  load: _loadAll,
+  onChange() { /* pas de temps réel : la liste se recharge à chaque enregistrement */ },
+  newId() { return crypto.randomUUID(); },
+  async save(t, id, doc) { const { error } = await sb.from(t).upsert({ id, ...doc }); if (error) throw sErr(error); },
+  async remove(t, id) { const { error } = await sb.from(t).delete().eq('id', id); if (error) throw sErr(error); }
+};
+const Files = {
+  canUpload: false,
+  async upload(blob) {
+    const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await sb.storage.from(BUCKET).upload(path, blob, { contentType: blob.type || 'image/jpeg', cacheControl: '31536000' });
+    if (error) throw sErr(error);
+    return path;
+  },
+  async urls(paths) {
+    const { data, error } = await sb.storage.from(BUCKET).createSignedUrls(paths, 3600);
+    if (error) throw sErr(error);
+    const o = {}; data.forEach(d => { if (d.signedUrl) o[d.path] = d.signedUrl; }); return o;
+  },
+  async blob(path) { const { data, error } = await sb.storage.from(BUCKET).download(path); if (error) throw sErr(error); return data; },
+  async remove(path) { const { error } = await sb.storage.from(BUCKET).remove([path]); if (error) console.warn(error); }
+};
+async function _b64(blob) {
+  const bmp = await createImageBitmap(blob), k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.85).split(',')[1];
+}
+const AI = {
+  available: false,
+  async read({ front, back, known }) {
+    const body = { front: front ? await _b64(front) : null, back: back ? await _b64(back) : null, known: known || '' };
+    const { data, error } = await sb.functions.invoke('read-card', { body });
+    if (error) {
+      let msg = error.message || '';
+      try { const j = await error.context?.json?.(); if (j?.error) msg = j.error; } catch (_) {}
+      const st = error.context?.status;
+      const code = /Failed to send|fetch/i.test(msg) && !st ? 'network' : st === 401 ? 'ai_expired' : st === 429 || /429|quota/i.test(msg) ? 'ai_busy' : /illisible/i.test(msg) ? 'ai_unreadable' : 'ai_unavailable';
+      throw { code, message: msg };
+    }
+    if (data?.error) throw { code: /illisible/i.test(data.error) ? 'ai_unreadable' : /429|quota/i.test(data.error) ? 'ai_busy' : 'ai_unavailable', message: data.error };
+    return data.card;
+  }
+};
+
+// ---------- Images ----------
+async function fileToCanvas(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image(); img.src = url; await img.decode();
+    const max = 3000, s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+    const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+    return c;
+  } finally { URL.revokeObjectURL(url); }
+}
+
+// ---------- Encodage : très bonne qualité + miniature légère ----------
+// Plein format : 1600 px de haut max (≈ 1150 × 1600 pour une carte), WebP q.85 (JPEG q.85 sinon) : très net, 2 à 4× plus léger qu'un JPEG q.92.
+// Miniature : 420 px de haut, ~20 Ko, utilisée pour les listes ; la vitrine, le diaporama et le recadrage utilisent toujours le plein format.
+let _webpOK;
+const _toBlob = (c, type, q) => new Promise(res => c.toBlob(b => res(b), type, q));
+async function encodeBlob(c, q) {
+  if (_webpOK === undefined) { const t = document.createElement('canvas'); t.width = t.height = 4; const b = await _toBlob(t, 'image/webp', .9); _webpOK = !!b && b.type === 'image/webp'; }
+  if (_webpOK) { const b = await _toBlob(c, 'image/webp', q); if (b && b.type === 'image/webp') return b; }
+  const b = await _toBlob(c, 'image/jpeg', q); if (!b) throw new Error('Conversion de l\'image impossible'); return b;
+}
+function scaled(cv, maxSide) {
+  const k = Math.min(1, maxSide / Math.max(cv.width, cv.height)); if (k >= 1) return cv;
+  const c = document.createElement('canvas'); c.width = Math.round(cv.width * k); c.height = Math.round(cv.height * k);
+  const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(cv, 0, 0, c.width, c.height); return c;
+}
+async function encodeCard(cv) {
+  const big = scaled(cv, 1600);
+  return { full: await encodeBlob(big, .85), thumb: await encodeBlob(scaled(big, 400), .75) };
+}
+
+// ---------- Détection automatique de la carte ----------
+// ===== Détection automatique de la carte (fonctions pures, sans DOM) =====
+// findCardQuad : repère les 4 coins sur une version réduite. refineQuad : affine chaque bord en pleine résolution.
+function findCardQuad(px, w, h) {
+  const lum = i => .3 * px[i] + .59 * px[i + 1] + .11 * px[i + 2];
+  const rowStat = y => { let m = 0, m2 = 0; for (let x = 0; x < w; x++) { const l = lum((y * w + x) * 4); m += l; m2 += l * l; } m /= w; return { m, v: m2 / w - m * m }; };
+  const colStat = x => { let m = 0, m2 = 0; for (let y = 0; y < h; y++) { const l = lum((y * w + x) * 4); m += l; m2 += l * l; } m /= h; return { m, v: m2 / h - m * m }; };
+  const flat = s => s.v < 60 && s.m < 28;   // bande noire uniforme (capture d'écran)
+  let t = 0, b = h - 1, l = 0, r = w - 1;
+  while (t < b && flat(rowStat(t))) t++; while (b > t && flat(rowStat(b))) b--;
+  while (l < r && flat(colStat(l))) l++; while (r > l && flat(colStat(r))) r--;
+  const rw = r - l + 1, rh = b - t + 1;
+  const full = () => ({ quad: [[l, t], [r + 1, t], [r + 1, b + 1], [l, b + 1]], conf: 0, fallback: true, region: [l, t, r + 1, b + 1] });
+  if (rw < 20 || rh < 20) return full();
+
+  // fond = médiane de l'anneau extérieur de la zone utile
+  const m = Math.max(3, Math.round(.04 * Math.min(rw, rh)));
+  const ring = [[], [], []];
+  for (let y = t; y <= b; y++) for (let x = l; x <= r; x++) {
+    if (x - l < m || r - x < m || y - t < m || b - y < m) { const i = (y * w + x) * 4; ring[0].push(px[i]); ring[1].push(px[i + 1]); ring[2].push(px[i + 2]); }
+  }
+  const med = a => { a.sort((p, q) => p - q); return a[a.length >> 1]; };
+  const bg = ring.map(med);
+
+  // carte des écarts au fond (0..255) + seuil d'Otsu
+  const D = new Uint8Array(rw * rh), hist = new Array(256).fill(0);
+  for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) {
+    const i = ((y + t) * w + x + l) * 4;
+    const d = Math.min(255, (Math.abs(px[i] - bg[0]) + Math.abs(px[i + 1] - bg[1]) + Math.abs(px[i + 2] - bg[2])) / 3 | 0);
+    D[y * rw + x] = d; hist[d]++;
+  }
+  const N = rw * rh; let sum = 0; for (let i = 0; i < 256; i++) sum += i * hist[i];
+  let wB = 0, sB = 0, best = -1, thr = 30, mB = 0, mF = 0;
+  for (let i = 0; i < 256; i++) {
+    wB += hist[i]; if (!wB) continue; const wF = N - wB; if (!wF) break;
+    sB += i * hist[i]; const a = sB / wB, c = (sum - sB) / wF, v = wB * wF * (a - c) * (a - c);
+    if (v > best) { best = v; thr = i; mB = a; mF = c; }
+  }
+  if (mF - mB < 22) return full();            // rien ne se détache du fond : la zone utile est la carte
+  const rd = [];   // bruit du fond : écart des pixels de l'anneau
+  for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) if (x < m || rw - 1 - x < m || y < m || rh - 1 - y < m) rd.push(D[y * rw + x]);
+  rd.sort((p, q) => p - q);
+  thr = Math.max(14, Math.min(60, 2.2 * rd[Math.floor(rd.length * .98)]));
+
+  let M = new Uint8Array(N); for (let i = 0; i < N; i++) M[i] = D[i] > thr ? 1 : 0;
+  const morph = (src, grow) => {              // dilatation (grow) ou érosion 3×3
+    const out = new Uint8Array(N);
+    for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) {
+      let hit = grow ? 0 : 1;
+      for (let dy = -1; dy <= 1 && (grow ? !hit : hit); dy++) for (let dx = -1; dx <= 1; dx++) {
+        const yy = y + dy, xx = x + dx; const v = (yy < 0 || xx < 0 || yy >= rh || xx >= rw) ? (grow ? 0 : 1) : src[yy * rw + xx];
+        if (grow ? v : !v) { hit = grow ? 1 : 0; break; }
+      }
+      out[y * rw + x] = hit;
+    }
+    return out;
+  };
+  M = morph(morph(M, true), false); M = morph(morph(M, true), false);   // fermeture
+  // remplissage des trous : tout ce qui n'est pas relié au bord est de la carte
+  const out = new Uint8Array(N), st = [];
+  const push = (x, y) => { const i = y * rw + x; if (!M[i] && !out[i]) { out[i] = 1; st.push(i); } };
+  for (let x = 0; x < rw; x++) { push(x, 0); push(x, rh - 1); } for (let y = 0; y < rh; y++) { push(0, y); push(rw - 1, y); }
+  while (st.length) { const i = st.pop(), x = i % rw, y = (i / rw) | 0; if (x > 0) push(x - 1, y); if (x < rw - 1) push(x + 1, y); if (y > 0) push(x, y - 1); if (y < rh - 1) push(x, y + 1); }
+  for (let i = 0; i < N; i++) M[i] = out[i] ? 0 : 1;
+  M = morph(morph(M, false), true);           // ouverture : enlève les fils et les ombres fines
+  M = morph(morph(M, false), true);
+
+  // plus grande zone connectée
+  const lab = new Int32Array(N); let bestL = 0, bestA = 0, L = 0;
+  for (let s = 0; s < N; s++) {
+    if (!M[s] || lab[s]) continue; L++; let a = 0; const q = [s]; lab[s] = L;
+    while (q.length) { const i = q.pop(); a++; const x = i % rw, y = (i / rw) | 0;
+      if (x > 0 && M[i - 1] && !lab[i - 1]) { lab[i - 1] = L; q.push(i - 1); }
+      if (x < rw - 1 && M[i + 1] && !lab[i + 1]) { lab[i + 1] = L; q.push(i + 1); }
+      if (y > 0 && M[i - rw] && !lab[i - rw]) { lab[i - rw] = L; q.push(i - rw); }
+      if (y < rh - 1 && M[i + rw] && !lab[i + rw]) { lab[i + rw] = L; q.push(i + rw); } }
+    if (a > bestA) { bestA = a; bestL = L; }
+  }
+  if (!bestL || bestA < N * .08 || bestA > N * .985) return full();
+
+  // contour → enveloppe convexe
+  const pts = [];
+  for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) {
+    if (lab[y * rw + x] !== bestL) continue;
+    const e = x === 0 || y === 0 || x === rw - 1 || y === rh - 1 || lab[y * rw + x - 1] !== bestL || lab[y * rw + x + 1] !== bestL || lab[(y - 1) * rw + x] !== bestL || lab[(y + 1) * rw + x] !== bestL;
+    if (e) pts.push([x, y], [x + 1, y], [x, y + 1], [x + 1, y + 1]);
+  }
+  pts.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const cross = (o, a, c) => (a[0] - o[0]) * (c[1] - o[1]) - (a[1] - o[1]) * (c[0] - o[0]);
+  const lo = [], up = [];
+  for (const p of pts) { while (lo.length > 1 && cross(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (up.length > 1 && cross(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  let hull = lo.slice(0, -1).concat(up.slice(0, -1));
+  const area = P => { let s = 0; for (let i = 0; i < P.length; i++) { const a = P[i], c = P[(i + 1) % P.length]; s += a[0] * c[1] - c[0] * a[1]; } return Math.abs(s) / 2; };
+  const hullArea = area(hull);
+  while (hull.length > 26) {                   // retire les sommets qui comptent le moins
+    let mi = 0, ma = Infinity;
+    for (let i = 0; i < hull.length; i++) { const a = Math.abs(cross(hull[(i + hull.length - 1) % hull.length], hull[i], hull[(i + 1) % hull.length])); if (a < ma) { ma = a; mi = i; } }
+    hull.splice(mi, 1);
+  }
+  // quadrilatère d'aire maximale parmi les sommets : ce sont les 4 coins de la carte
+  let bq = null, ba = -1; const n = hull.length;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) for (let k = j + 1; k < n; k++) for (let q = k + 1; q < n; q++) {
+    const a = area([hull[i], hull[j], hull[k], hull[q]]); if (a > ba) { ba = a; bq = [hull[i], hull[j], hull[k], hull[q]]; }
+  }
+  if (!bq) return full();
+  const cx = bq.reduce((s, p) => s + p[0], 0) / 4, cy = bq.reduce((s, p) => s + p[1], 0) / 4;
+  bq.sort((p, q) => Math.atan2(p[1] - cy, p[0] - cx) - Math.atan2(q[1] - cy, q[0] - cx));
+  let s0 = 0; for (let i = 1; i < 4; i++) if (bq[i][0] + bq[i][1] < bq[s0][0] + bq[s0][1]) s0 = i;
+  const quad = [0, 1, 2, 3].map(i => { const p = bq[(s0 + i) % 4]; return [p[0] + l, p[1] + t]; });   // haut-gauche, haut-droit, bas-droit, bas-gauche
+  return { quad, conf: ba / hullArea, fallback: false, region: [l, t, r + 1, b + 1] };
+}
+
+// Affine chaque bord : cherche le vrai contour le long de plusieurs coupes, ajuste une droite, recoupe les droites.
+function refineQuad(px, W, H, q, bounds, offFrac = .02, spanFrac = .05) {
+  const mg = 6, bd = bounds ? [bounds[0] + mg, bounds[1] + mg, bounds[2] - mg, bounds[3] - mg] : [0, 0, W, H];
+  const inside = (x, y) => x >= bd[0] && x <= bd[2] && y >= bd[1] && y <= bd[3];
+  const g = (x, y) => {
+    x = Math.max(0, Math.min(W - 1.001, x)); y = Math.max(0, Math.min(H - 1.001, y));
+    const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, i = (y0 * W + x0) * 4, j = i + W * 4;
+    const v = k => .3 * px[k] + .59 * px[k + 1] + .11 * px[k + 2];
+    return v(i) * (1 - fx) * (1 - fy) + v(i + 4) * fx * (1 - fy) + v(j) * (1 - fx) * fy + v(j + 4) * fx * fy;
+  };
+  const cx = q.reduce((s, p) => s + p[0], 0) / 4, cy = q.reduce((s, p) => s + p[1], 0) / 4;
+  const lines = [];
+  for (let e = 0; e < 4; e++) {
+    const a = q[e], b = q[(e + 1) % 4], dx = b[0] - a[0], dy = b[1] - a[1], Len = Math.hypot(dx, dy);
+    const u = [dx / Len, dy / Len]; let nrm = [u[1], -u[0]];
+    if (nrm[0] * ((a[0] + b[0]) / 2 - cx) + nrm[1] * ((a[1] + b[1]) / 2 - cy) < 0) nrm = [-nrm[0], -nrm[1]];
+    const found = [];
+    const probe = (span, outermost) => {
+      const res = [];
+      for (let tt = .1; tt <= .9001; tt += .04) {
+        const c = [a[0] + u[0] * Len * tt, a[1] + u[1] * Len * tt];
+        const prof = [];
+        for (let s = -span; s <= span; s++) {
+          let v = 0; for (let k = -2; k <= 2; k++) v += g(c[0] + nrm[0] * s + u[0] * k, c[1] + nrm[1] * s + u[1] * k); prof.push(v / 5);
+        }
+        const dd = []; let mx = 0;
+        for (let i = 2; i < prof.length - 2; i++) {
+          const sx = c[0] + nrm[0] * (i - span), sy = c[1] + nrm[1] * (i - span);
+          const d = (inside(sx + nrm[0] * 2, sy + nrm[1] * 2) && inside(sx - nrm[0] * 2, sy - nrm[1] * 2)) ? Math.abs(prof[i + 2] - prof[i - 2]) : 0;   // on ignore les bandes noires hors zone
+          dd[i] = d; if (d > mx) mx = d;
+        }
+        if (mx <= 10) continue;
+        let pick = -1;
+        if (outermost) { for (let i = prof.length - 3; i >= 2; i--) if (dd[i] >= .45 * mx && dd[i] >= dd[i - 1] && dd[i] >= dd[i + 1]) { pick = i; break; } }
+        else { for (let i = 2; i < prof.length - 2; i++) if (dd[i] === mx) { pick = i; break; } }
+        if (pick >= 0) { const s = pick - span; res.push([c[0] + nrm[0] * s, c[1] + nrm[1] * s]); }
+      }
+      return res;
+    };
+    let pts1 = probe(Math.max(8, Math.min(110, Math.round(spanFrac * Len))), true);
+    found.push(...pts1);
+    const fit = pts => {                       // droite par moindres carrés orthogonaux
+      const n = pts.length, mx = pts.reduce((s, p) => s + p[0], 0) / n, my = pts.reduce((s, p) => s + p[1], 0) / n;
+      let sxx = 0, syy = 0, sxy = 0; for (const p of pts) { sxx += (p[0] - mx) ** 2; syy += (p[1] - my) ** 2; sxy += (p[0] - mx) * (p[1] - my); }
+      const th = .5 * Math.atan2(2 * sxy, sxx - syy); return { p: [mx, my], d: [Math.cos(th), Math.sin(th)] };
+    };
+    const dist = (ln, p) => Math.abs((p[0] - ln.p[0]) * ln.d[1] - (p[1] - ln.p[1]) * ln.d[0]);
+    let ln = { p: a, d: u }, ok = false;
+    if (found.length >= 7) {
+      let use = found, cand = fit(use);
+      for (let it = 0; it < 3; it++) {
+        const ds = use.map(p => dist(cand, p)).sort((p, c) => p - c), md = ds[ds.length >> 1];
+        const keep = found.filter(p => dist(cand, p) <= Math.max(1.5, 2.5 * md)); if (keep.length < 6) break; use = keep; cand = fit(use);
+      }
+      const ang = Math.acos(Math.min(1, Math.abs(cand.d[0] * u[0] + cand.d[1] * u[1]))) * 180 / Math.PI;
+      const off = Math.abs((cand.p[0] - a[0]) * nrm[0] + (cand.p[1] - a[1]) * nrm[1]);   // un affinage ne doit pas s'éloigner trop de la détection
+      if (use.length >= 6 && ang < 6 && off <= offFrac * Len + 3) { ln = cand; ok = true; }
+    }
+    lines.push(ln);
+  }
+  const meet = (l1, l2) => {
+    const det = l1.d[0] * (-l2.d[1]) - l1.d[1] * (-l2.d[0]); if (Math.abs(det) < 1e-6) return null;
+    const rx = l2.p[0] - l1.p[0], ry = l2.p[1] - l1.p[1];
+    const t1 = (rx * (-l2.d[1]) - ry * (-l2.d[0])) / det; return [l1.p[0] + l1.d[0] * t1, l1.p[1] + l1.d[1] * t1];
+  };
+  const size = Math.min(Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]), Math.hypot(q[3][0] - q[0][0], q[3][1] - q[0][1]));
+  return q.map((p0, i) => { const p = meet(lines[(i + 3) % 4], lines[i]); return p && Math.hypot(p[0] - p0[0], p[1] - p0[1]) < .08 * size ? p : p0; });
+}
+
+// ===== Détection par les lignes : cherche 4 droites qui forment un rectangle de carte (rapport 63:88) =====
+function houghQuads(px, w, h) {
+  const N = w * h, gray = new Float32Array(N);
+  for (let i = 0; i < N; i++) gray[i] = .3 * px[i * 4] + .59 * px[i * 4 + 1] + .11 * px[i * 4 + 2];
+  const blur = a => { const o = new Float32Array(N); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let s = 0, n = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const yy = y + dy, xx = x + dx; if (yy >= 0 && xx >= 0 && yy < h && xx < w) { s += a[yy * w + xx]; n++; } } o[y * w + x] = s / n; } return o; };
+  const g = blur(blur(gray));
+  const mag = new Float32Array(N), ang = new Float32Array(N);
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x;
+    const gx = (g[i - w + 1] + 2 * g[i + 1] + g[i + w + 1]) - (g[i - w - 1] + 2 * g[i - 1] + g[i + w - 1]);
+    const gy = (g[i + w - 1] + 2 * g[i + w] + g[i + w + 1]) - (g[i - w - 1] + 2 * g[i - w] + g[i - w + 1]);
+    mag[i] = Math.hypot(gx, gy) / 4; ang[i] = Math.atan2(gy, gx);   // direction du gradient (normale du bord)
+  }
+  const sorted = Float32Array.from(mag).sort(); const thr = Math.max(5, sorted[Math.floor(N * .90)]);
+  // vote de Hough contraint par la direction du gradient
+  const T = 180, diag = Math.ceil(Math.hypot(w, h)), R = 2 * diag + 1;
+  const acc = new Float32Array(T * R), cs = [], sn = [];
+  for (let t = 0; t < T; t++) { cs.push(Math.cos(t * Math.PI / 180)); sn.push(Math.sin(t * Math.PI / 180)); }
+  for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
+    const i = y * w + x; if (mag[i] < thr) continue;
+    let th = ang[i] * 180 / Math.PI; th = ((th % 180) + 180) % 180; const t0 = Math.round(th);
+    for (let dt = -2; dt <= 2; dt++) { const t = (t0 + dt + T) % T; const rho = Math.round(x * cs[t] + y * sn[t]) + diag; acc[t * R + rho] += mag[i] * (1 - Math.abs(dt) * .2); }
+  }
+  // pics (avec lissage en rho)
+  const peaks = [], taken = [];
+  const sm = (t, r) => acc[t * R + r] + .6 * ((r > 0 ? acc[t * R + r - 1] : 0) + (r < R - 1 ? acc[t * R + r + 1] : 0));
+  const cand = [];
+  for (let t = 0; t < T; t++) for (let r = 1; r < R - 1; r++) { const v = sm(t, r); if (v > 0) cand.push([v, t, r]); }
+  cand.sort((a, b) => b[0] - a[0]);
+  const same = (t1, r1, t2, r2) => { let dt = Math.abs(t1 - t2); if (dt > 90) { dt = 180 - dt; r2 = -(r2 - diag) + diag; } return dt <= 8 && Math.abs(r1 - r2) <= Math.max(9, 0.03 * diag); };
+  for (const [v, t, r] of cand) {
+    if (peaks.length >= 18) break;
+    if (taken.some(p => same(t, r, p.t, p.r))) continue;
+    taken.push({ t, r }); peaks.push({ t, rho: r - diag, v });
+  }
+  return { peaks, mag, ang, thr, w, h };
+}
+const _lineOf = p => { const th = p.t * Math.PI / 180; return { n: [Math.cos(th), Math.sin(th)], c: p.rho }; };   // n·(x,y) = c
+function _meet(a, b) { const det = a.n[0] * b.n[1] - a.n[1] * b.n[0]; if (Math.abs(det) < 1e-3) return null; return [(a.c * b.n[1] - a.n[1] * b.c) / det, (a.n[0] * b.c - a.c * b.n[0]) / det]; }
+// score d'un quadrilatère = proportion du contour qui est un vrai bord, en tenant compte du rapport 63:88 et de la taille
+function quadSupport(Hh, q) {
+  const { mag, ang, thr, w, h } = Hh; let tot = 0, ok = 0; const per = [];
+  for (let e = 0; e < 4; e++) {
+    const a = q[e], b = q[(e + 1) % 4], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+    const nx = -dy / L, ny = dx / L; let n = 0, k = 0;
+    for (let s = .04; s <= .96; s += 2 / L) {
+      const x = a[0] + dx * s, y = a[1] + dy * s; n++;
+      let hit = false;
+      for (let o = -2; o <= 2 && !hit; o++) { const xx = Math.round(x + nx * o), yy = Math.round(y + ny * o); if (xx < 1 || yy < 1 || xx >= w - 1 || yy >= h - 1) { hit = true; break; } const i = yy * w + xx; if (mag[i] >= thr * .8) { let d = Math.abs(Math.atan2(Math.sin(ang[i] - Math.atan2(ny, nx)), Math.cos(ang[i] - Math.atan2(ny, nx)))); if (d > Math.PI / 2) d = Math.PI - d; if (d < .45) hit = true; } }
+      if (hit) k++;
+    }
+    per.push(k / Math.max(1, n)); ok += k; tot += n;
+  }
+  return { mean: ok / Math.max(1, tot), min: Math.min(...per), per };
+}
+function aspectOf(q) {
+  const d = (a, b) => Math.hypot(q[a][0] - q[b][0], q[a][1] - q[b][1]);
+  const wd = (d(0, 1) + d(3, 2)) / 2, ht = (d(0, 3) + d(1, 2)) / 2; return Math.min(wd, ht) / Math.max(wd, ht);
+}
+function polyArea(P) { let s = 0; for (let i = 0; i < P.length; i++) { const a = P[i], c = P[(i + 1) % P.length]; s += a[0] * c[1] - c[0] * a[1]; } return Math.abs(s) / 2; }
+
+// Recale chaque côté sur les vrais pixels de bord proches (moindres carrés), puis recoupe les 4 droites.
+function polishQuad(Hh, q) {
+  const { mag, ang, thr, w, h } = Hh; let cur = q.map(p => p.slice());
+  for (const tol of [4, 2.5, 1.6, 1.2]) {
+    const lines = [];
+    for (let e = 0; e < 4; e++) {
+      const a = cur[e], b = cur[(e + 1) % 4], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
+      const pts = [];
+      const x0 = Math.max(1, Math.floor(Math.min(a[0], b[0]) - tol - 1)), x1 = Math.min(w - 2, Math.ceil(Math.max(a[0], b[0]) + tol + 1));
+      const y0 = Math.max(1, Math.floor(Math.min(a[1], b[1]) - tol - 1)), y1 = Math.min(h - 2, Math.ceil(Math.max(a[1], b[1]) + tol + 1));
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+        const i = y * w + x; if (mag[i] < thr * .8) continue;
+        const rx = x - a[0], ry = y - a[1], t = (rx * ux + ry * uy) / L, d = rx * nx + ry * ny;
+        if (t < .03 || t > .97 || Math.abs(d) > tol) continue;
+        let da = Math.abs(Math.atan2(Math.sin(ang[i] - Math.atan2(ny, nx)), Math.cos(ang[i] - Math.atan2(ny, nx)))); if (da > Math.PI / 2) da = Math.PI - da; if (da > .5) continue;
+        pts.push([x, y, mag[i]]);
+      }
+      if (pts.length < Math.max(8, L * .25)) { lines.push({ p: a, d: [ux, uy] }); continue; }
+      let sw = 0, mx = 0, my = 0; for (const p of pts) { sw += p[2]; mx += p[0] * p[2]; my += p[1] * p[2]; } mx /= sw; my /= sw;
+      let sxx = 0, syy = 0, sxy = 0; for (const p of pts) { sxx += p[2] * (p[0] - mx) ** 2; syy += p[2] * (p[1] - my) ** 2; sxy += p[2] * (p[0] - mx) * (p[1] - my); }
+      const th = .5 * Math.atan2(2 * sxy, sxx - syy); let d = [Math.cos(th), Math.sin(th)]; if (d[0] * ux + d[1] * uy < 0) d = [-d[0], -d[1]];
+      lines.push({ p: [mx, my], d });
+    }
+    const meet = (l1, l2) => { const det = l1.d[0] * (-l2.d[1]) - l1.d[1] * (-l2.d[0]); if (Math.abs(det) < 1e-6) return null; const rx = l2.p[0] - l1.p[0], ry = l2.p[1] - l1.p[1]; const t1 = (rx * (-l2.d[1]) - ry * (-l2.d[0])) / det; return [l1.p[0] + l1.d[0] * t1, l1.p[1] + l1.d[1] * t1]; };
+    const nq = cur.map((p0, i) => meet(lines[(i + 3) % 4], lines[i]) || p0);
+    if (nq.some((p, i) => Math.hypot(p[0] - cur[i][0], p[1] - cur[i][1]) > 14)) break;
+    cur = nq;
+  }
+  return cur;
+}
+
+// Le contour trouvé est parfois un cadre intérieur de la carte : on cherche, juste à l'extérieur, un autre bord continu et on s'y déplace.
+function segSupport(Hh, a, b, nx, ny, off, minMag, collect) {
+  const { mag, ang, thr, w, h } = Hh; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy); let n = 0, k = 0;
+  const base = Math.atan2(ny, nx);
+  for (let s = .08; s <= .92; s += 2 / L) {
+    const x = a[0] + dx * s + nx * off, y = a[1] + dy * s + ny * off; n++;
+    let hit = false;
+    for (let o = -1; o <= 1 && !hit; o++) { const xx = Math.round(x + nx * o), yy = Math.round(y + ny * o); if (xx < 1 || yy < 1 || xx >= w - 1 || yy >= h - 1) continue; const i = yy * w + xx; if (mag[i] >= thr * .8) { let d = Math.abs(Math.atan2(Math.sin(ang[i] - base), Math.cos(ang[i] - base))); if (d > Math.PI / 2) d = Math.PI - d; if (d < .4) hit = true; } }
+    if (hit) k++;
+  }
+  return k / Math.max(1, n);
+}
+function expandQuad(Hh, q) {
+  const cx = q.reduce((s, p) => s + p[0], 0) / 4, cy = q.reduce((s, p) => s + p[1], 0) / 4;
+  const side = Math.min(Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]), Math.hypot(q[3][0] - q[0][0], q[3][1] - q[0][1]));
+  const maxOff = .1 * side; const lines = [];
+  for (let e = 0; e < 4; e++) {
+    const a = q[e], b = q[(e + 1) % 4], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+    let nx = -dy / L, ny = dx / L; if (nx * ((a[0] + b[0]) / 2 - cx) + ny * ((a[1] + b[1]) / 2 - cy) < 0) { nx = -nx; ny = -ny; }
+    const mags = []; for (let o = -1; o <= 1; o++) segSupport(Hh, a, b, nx, ny, o, 0, mags);
+    mags.sort((p, r) => p - r); const ref = mags.length ? mags[mags.length >> 1] : 0, mm = Math.max(Hh.thr * .8, .55 * ref);
+    const sup = []; for (let o = 0; o <= maxOff; o += .5) sup.push(segSupport(Hh, a, b, nx, ny, o, mm));
+    const s0 = Math.max(sup[0], sup[1], sup[2]);
+    let best = 0;
+    for (let i = 4; i < sup.length - 1; i++) if (sup[i] >= Math.max(.72, .85 * s0) && sup[i] >= sup[i - 1] - .01 && sup[i] >= sup[i + 1]) { best = i * .5; }
+    lines.push({ p: [a[0] + nx * best, a[1] + ny * best], d: [dx / L, dy / L], moved: best });
+  }
+  const meet = (l1, l2) => { const det = l1.d[0] * (-l2.d[1]) - l1.d[1] * (-l2.d[0]); if (Math.abs(det) < 1e-6) return null; const rx = l2.p[0] - l1.p[0], ry = l2.p[1] - l1.p[1]; const t1 = (rx * (-l2.d[1]) - ry * (-l2.d[0])) / det; return [l1.p[0] + l1.d[0] * t1, l1.p[1] + l1.d[1] * t1]; };
+  return q.map((p0, i) => meet(lines[(i + 3) % 4], lines[i]) || p0);
+}
+function bestLineQuad(Hh) {
+  const { peaks, w, h } = Hh, lines = peaks.map(_lineOf); const out = [];
+  const n = lines.length; const mg = .06;
+  const pairs = [[[0, 1], [2, 3]], [[0, 2], [1, 3]], [[0, 3], [1, 2]]];
+  for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) for (let c = b + 1; c < n; c++) for (let d = c + 1; d < n; d++) {
+    const idx = [a, b, c, d];
+    for (const [p1, p2] of pairs) {
+      const A = [idx[p1[0]], idx[p1[1]]], B = [idx[p2[0]], idx[p2[1]]];
+      // un côté opposé doit être (presque) parallèle à l'autre
+      const par = (i, j) => Math.abs(lines[i].n[0] * lines[j].n[1] - lines[i].n[1] * lines[j].n[0]);
+      if (par(A[0], A[1]) > .42 || par(B[0], B[1]) > .42) continue;
+      const q0 = _meet(lines[A[0]], lines[B[0]]), q1 = _meet(lines[A[0]], lines[B[1]]), q2 = _meet(lines[A[1]], lines[B[1]]), q3 = _meet(lines[A[1]], lines[B[0]]);
+      if (!q0 || !q1 || !q2 || !q3) continue;
+      let q = [q0, q1, q2, q3];
+      if (q.some(p => p[0] < -mg * w || p[1] < -mg * h || p[0] > (1 + mg) * w || p[1] > (1 + mg) * h)) continue;
+      // convexe + ordre : on teste le signe des produits vectoriels
+      const cr = (o, p, r) => (p[0] - o[0]) * (r[1] - o[1]) - (p[1] - o[1]) * (r[0] - o[0]);
+      const sg = [cr(q[0], q[1], q[2]), cr(q[1], q[2], q[3]), cr(q[2], q[3], q[0]), cr(q[3], q[0], q[1])];
+      if (!(sg.every(v => v > 0) || sg.every(v => v < 0))) continue;
+      const area = polyArea(q); if (area < .06 * w * h) continue;
+      const asp = aspectOf(q); if (asp < .6 || asp > .83) continue;
+      let ok = true; for (let i = 0; i < 4; i++) { const u = [q[(i + 1) % 4][0] - q[i][0], q[(i + 1) % 4][1] - q[i][1]], v = [q[(i + 3) % 4][0] - q[i][0], q[(i + 3) % 4][1] - q[i][1]]; const cs = (u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v)); if (Math.abs(cs) > .55) ok = false; }
+      if (!ok) continue;
+      out.push({ q, area, asp });
+    }
+  }
+  let best = null; const all = [];
+  const pre = out.map(c => ({ c, s: quadSupport(Hh, c.q) })).filter(o => o.s.min >= .4).sort((a, b) => b.s.mean - a.s.mean).slice(0, 40);
+  for (const { c } of pre) {
+    c.q = polishQuad(Hh, c.q); c.area = polyArea(c.q); c.asp = aspectOf(c.q);
+    const s = quadSupport(Hh, c.q);
+    if (s.min < .45) continue;
+    const af = Math.exp(-(((c.asp - .716) / .09) ** 2));
+    const score = s.mean * (0.6 + 0.4 * s.min) * (0.5 + 0.5 * af) * Math.pow(c.area / (w * h), .3);
+    all.push({ quad: c.q, score, support: s.mean, min: s.min, asp: c.asp, area: c.area });
+    if (!best || score > best.score) best = { quad: c.q, score, support: s.mean, min: s.min, asp: c.asp };
+  }
+  if (best) {
+    // à score voisin, on préfère le plus grand : le bord extérieur de la carte plutôt qu'un cadre intérieur
+    let pick = best; pick.area = polyArea(pick.quad);
+    const sideB = Math.sqrt(pick.area * .716);   // ordre de grandeur du petit côté
+    const near = (c, ref) => c.quad.every(p => ref.quad.some(r => Math.hypot(p[0] - r[0], p[1] - r[1]) < .12 * sideB * 1.2));
+    for (const c of all) if (c.score >= .68 * best.score && c.min >= .4 && c.area > pick.area * 1.04 && c.area < pick.area * 1.5 && near(c, best)) pick = c;
+    pick.all = all;
+    const ex = polishQuad(Hh, expandQuad(Hh, pick.quad)); const ar = polyArea(ex), a0 = polyArea(pick.quad);
+    if (ar > a0 && ar < a0 * 1.5 && aspectOf(ex) > .6 && aspectOf(ex) < .85) pick.quad = ex;
+    return pick;
+  }
+  return best;
+}
+
+// Zone utile : on enlève les bandes noires uniformes (captures d'écran), puis on cherche la carte dans le reste.
+function usableRegion(px, w, h) {
+  const lum = i => .3 * px[i] + .59 * px[i + 1] + .11 * px[i + 2];
+  const rowStat = y => { let m = 0, m2 = 0; for (let x = 0; x < w; x++) { const l = lum((y * w + x) * 4); m += l; m2 += l * l; } m /= w; return { m, v: m2 / w - m * m }; };
+  const colStat = x => { let m = 0, m2 = 0; for (let y = 0; y < h; y++) { const l = lum((y * w + x) * 4); m += l; m2 += l * l; } m /= h; return { m, v: m2 / h - m * m }; };
+  const flat = s => s.v < 60 && s.m < 28;
+  let t = 0, b = h - 1, l = 0, r = w - 1;
+  while (t < b && flat(rowStat(t))) t++; while (b > t && flat(rowStat(b))) b--;
+  while (l < r && flat(colStat(l))) l++; while (r > l && flat(colStat(r))) r--;
+  return [l, t, r + 1, b + 1];
+}
+function detectByLines(px, w, h) {
+  const [l, t, r, b] = usableRegion(px, w, h), cw = r - l, ch = b - t;
+  if (cw < 40 || ch < 40) return null;
+  const sub = new Uint8ClampedArray(cw * ch * 4);
+  for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) { const i = ((y + t) * w + x + l) * 4, o = (y * cw + x) * 4; sub[o] = px[i]; sub[o + 1] = px[i + 1]; sub[o + 2] = px[i + 2]; sub[o + 3] = 255; }
+  const Hh = houghQuads(sub, cw, ch), best = bestLineQuad(Hh);
+  if (!best) return null;
+  return { quad: best.quad.map(p => [p[0] + l, p[1] + t]), score: best.score, support: best.support, min: best.min, region: [l, t, r, b] };
+}
+
+// Détection complète : 4 coins sur image réduite, affinage des bords en pleine résolution, choix du mode.
+function autoDetect(src) {
+  const sc = Math.min(1, 360 / Math.max(src.width, src.height));
+  const w = Math.max(8, Math.round(src.width * sc)), h = Math.max(8, Math.round(src.height * sc));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(src, 0, 0, w, h);
+  const data = x.getImageData(0, 0, w, h).data;
+  let lineHit = null, bgHit = null;
+  try { lineHit = detectByLines(data, w, h); } catch (e) { console.warn(e); }
+  const r = findCardQuad(data, w, h);                      // 2e méthode : fond uniforme
+  if (!r.fallback) bgHit = r;
+  let q, region, found = true;
+  if (lineHit && (lineHit.min >= .45 || !bgHit)) { q = lineHit.quad; region = lineHit.region; }
+  else if (bgHit) { q = bgHit.quad; region = bgHit.region; }
+  else { q = r.quad; region = r.region; found = false; }
+  q = q.map(p => [p[0] / sc, p[1] / sc]);
+  if (found) {
+    try {
+      const full = src.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, src.width, src.height).data;
+      q = refineQuad(full, src.width, src.height, q, region.map(v => v / sc), .025, .05);
+    } catch (e) { console.warn(e); }
+    const cx = q.reduce((s, p) => s + p[0], 0) / 4, cy = q.reduce((s, p) => s + p[1], 0) / 4;   // léger retrait : supprime le liseré du fond sur les coins arrondis
+    q = q.map(p => [p[0] + (cx - p[0]) * .003, p[1] + (cy - p[1]) * .003]);
+  }
+  const cxo = q.reduce((s, p) => s + p[0], 0) / 4, cyo = q.reduce((s, p) => s + p[1], 0) / 4;
+  q.sort((p, r2) => Math.atan2(p[1] - cyo, p[0] - cxo) - Math.atan2(r2[1] - cyo, r2[0] - cxo));
+  let s0 = 0; for (let i = 1; i < 4; i++) if (q[i][0] + q[i][1] < q[s0][0] + q[s0][1]) s0 = i;
+  q = [0, 1, 2, 3].map(i => q[(s0 + i) % 4]);
+  r.fallback = !found;
+  const ang = (a, b) => Math.abs(Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI);
+  const straight = r.fallback || ((ang(q[0], q[1]) < 1.2 || ang(q[0], q[1]) > 178.8) && (ang(q[3], q[2]) < 1.2 || ang(q[3], q[2]) > 178.8) && Math.abs(ang(q[0], q[3]) - 90) < 1.2 && Math.abs(ang(q[1], q[2]) - 90) < 1.2);
+  const xs = q.map(p => p[0]), ys = q.map(p => p[1]);
+  const clamp = (v, m) => Math.max(0, Math.min(m, v));
+  return {
+    mode: straight ? 'rect' : 'persp', auto: !r.fallback,
+    rect: { l: clamp(Math.min(...xs), src.width), r: clamp(Math.max(...xs), src.width), t: clamp(Math.min(...ys), src.height), b: clamp(Math.max(...ys), src.height) },
+    pts: q.map(p => [clamp(p[0], src.width), clamp(p[1], src.height)])
+  };
+}
+
+// Détourage entièrement automatique (ajout en lot) : renvoie la carte redressée au format standard.
+function autoCrop(src) {
+  const a = autoDetect(src); let out;
+  if (a.mode === 'rect') {
+    const w = Math.round(a.rect.r - a.rect.l), h = Math.round(a.rect.b - a.rect.t), [W, H] = finalSize(w, h);
+    out = document.createElement('canvas'); out.width = W; out.height = H;
+    const x = out.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, a.rect.l, a.rect.t, w, h, 0, 0, W, H);
+  } else {
+    const d = (i, j) => Math.hypot(a.pts[i][0] - a.pts[j][0], a.pts[i][1] - a.pts[j][1]);
+    const [W, H] = finalSize((d(0, 1) + d(3, 2)) / 2, (d(0, 3) + d(1, 2)) / 2); out = warp(src, a.pts, W, H);
+  }
+  return { canvas: out, auto: a.auto };
+}
+
+function solveH(src, dst) {
+  const A = [];
+  for (let i = 0; i < 4; i++) {
+    const [x, y] = dst[i], [u, v] = src[i];
+    A.push([x, y, 1, 0, 0, 0, -x * u, -y * u, u]); A.push([0, 0, 0, x, y, 1, -x * v, -y * v, v]);
+  }
+  for (let i = 0; i < 8; i++) {
+    let p = i; for (let k = i + 1; k < 8; k++) if (Math.abs(A[k][i]) > Math.abs(A[p][i])) p = k;
+    [A[i], A[p]] = [A[p], A[i]];
+    for (let k = i + 1; k < 8; k++) { const f = A[k][i] / A[i][i]; for (let j = i; j < 9; j++) A[k][j] -= f * A[i][j]; }
+  }
+  const h = new Array(8);
+  for (let i = 7; i >= 0; i--) { let s = A[i][8]; for (let j = i + 1; j < 8; j++) s -= A[i][j] * h[j]; h[i] = s / A[i][i]; }
+  return h;
+}
+function warp(src, q, W, H) {
+  const sx = src.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, src.width, src.height);
+  const S = sx.data, sw = src.width, sh = src.height;
+  const h = solveH(q, [[0, 0], [W, 0], [W, H], [0, H]]);
+  const out = document.createElement('canvas'); out.width = W; out.height = H;
+  const ox = out.getContext('2d'); const od = ox.createImageData(W, H); const O = od.data;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const d = h[6] * x + h[7] * y + 1;
+    let u = (h[0] * x + h[1] * y + h[2]) / d, v = (h[3] * x + h[4] * y + h[5]) / d;
+    u = Math.min(sw - 1.001, Math.max(0, u)); v = Math.min(sh - 1.001, Math.max(0, v));
+    const x0 = u | 0, y0 = v | 0, fx = u - x0, fy = v - y0, i00 = (y0 * sw + x0) * 4, i10 = i00 + 4, i01 = i00 + sw * 4, i11 = i01 + 4, o = (y * W + x) * 4;
+    for (let k = 0; k < 3; k++) O[o + k] = S[i00 + k] * (1 - fx) * (1 - fy) + S[i10 + k] * fx * (1 - fy) + S[i01 + k] * (1 - fx) * fy + S[i11 + k] * fx * fy;
+    O[o + 3] = 255;
+  }
+  ox.putImageData(od, 0, 0); return out;
+}
+function finalSize(w, h) {   // format standard 63 × 88 mm quand on en est proche
+  const STD = 63 / 88; const r = w / h;
+  if (Math.abs(r / STD - 1) < .07) return [630, 880];
+  if (Math.abs(r * STD - 1) < .07) return [880, 630];
+  const s = Math.min(1, 1400 / Math.max(w, h)); return [Math.max(8, Math.round(w * s)), Math.max(8, Math.round(h * s))];
+}
+
+// ---------- Éditeur de détourage ----------
+function openCropper(srcIn) {
+  return new Promise(resolve => {
+    let src = srcIn, mode = 'rect', rect, pts, scale = 1, drag = null, iw = 0, ih = 0;
+    const PAD = 22;   // marge autour de l'image : les poignées du bord restent visibles et attrapables
+    const ov = document.createElement('div'); ov.className = 'ed';
+    ov.innerHTML = `<div class="bar"><button class="btn on" data-m="rect">Rectangle droit</button><button class="btn" data-m="persp">Perspective</button><button class="btn" id="rot">⟳ Pivoter</button><button class="btn" id="all">Photo entière</button><button class="btn" id="auto">Auto</button></div>
+      <div class="info" id="info"></div><div class="stage" id="stage"><canvas class="main" id="cv"></canvas><canvas class="loupe" id="lp" width="240" height="240"></canvas></div>
+      <div class="foot"><button class="btn" id="no">Annuler</button><button class="btn primary" id="ok">Valider</button></div>`;
+    document.body.appendChild(ov);
+    const cv = $('#cv', ov), g = cv.getContext('2d'), lp = $('#lp', ov), lg = lp.getContext('2d'), stage = $('#stage', ov);
+
+    let note = '';
+    const syncMode = () => ov.querySelectorAll('[data-m]').forEach(x => x.classList.toggle('on', x.dataset.m === mode));
+    const reset = () => { const a = autoDetect(src); rect = a.rect; pts = a.pts; mode = a.mode; note = a.auto ? 'Carte détectée automatiquement. Vérifie les coins, puis valide.' : 'Détection incertaine : place les bords sur la carte.'; syncMode(); };
+    const layout = () => {
+      const bw = stage.clientWidth - 2 * PAD - 16, bh = stage.clientHeight - 2 * PAD - 8; if (bw <= 0 || bh <= 0) return;
+      scale = Math.min(bw / src.width, bh / src.height);
+      iw = Math.round(src.width * scale); ih = Math.round(src.height * scale); cv.width = iw + 2 * PAD; cv.height = ih + 2 * PAD; draw();
+    };
+    const handles = () => {
+      if (mode === 'persp') return pts.map(p => ({ x: p[0], y: p[1] }));
+      const { l, t, r, b } = rect, mx = (l + r) / 2, my = (t + b) / 2;
+      return [{ x: l, y: t, e: 'lt' }, { x: r, y: t, e: 'rt' }, { x: r, y: b, e: 'rb' }, { x: l, y: b, e: 'lb' }, { x: mx, y: t, e: 't' }, { x: r, y: my, e: 'r' }, { x: mx, y: b, e: 'b' }, { x: l, y: my, e: 'l' }];
+    };
+    function draw() {
+      g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.translate(PAD, PAD); g.drawImage(src, 0, 0, iw, ih);
+      const P = mode === 'rect' ? [[rect.l, rect.t], [rect.r, rect.t], [rect.r, rect.b], [rect.l, rect.b]] : pts;
+      g.save(); g.beginPath(); g.rect(0, 0, iw, ih); P.forEach((p, i) => i ? g.lineTo(p[0] * scale, p[1] * scale) : g.moveTo(p[0] * scale, p[1] * scale)); g.closePath();
+      g.fillStyle = 'rgba(10,7,5,.62)'; g.fill('evenodd'); g.restore();
+      g.strokeStyle = '#ff6a1a'; g.lineWidth = 2.5; g.beginPath(); P.forEach((p, i) => i ? g.lineTo(p[0] * scale, p[1] * scale) : g.moveTo(p[0] * scale, p[1] * scale)); g.closePath(); g.stroke();
+      handles().forEach(h => { g.beginPath(); g.fillStyle = h.e && h.e.length === 1 ? '#d9b45a' : '#ff6a1a'; g.arc(h.x * scale, h.y * scale, h.e && h.e.length === 1 ? 9 : 12, 0, 7); g.fill(); g.lineWidth = 2; g.strokeStyle = '#120e0b'; g.stroke(); });
+      $('#info', ov).textContent = note + (mode === 'rect' ? ' Glisse les bords ou les coins : le résultat reste droit.' : ' Glisse les 4 coins pour corriger la perspective.');
+    }
+    function loupe(ix, iy) {   // (ix, iy) en pixels de l'image : on centre la loupe exactement sur la poignée
+      lp.style.display = 'block'; const left = (ix * scale + PAD) < stage.clientWidth / 2; lp.style.left = left ? 'auto' : '10px'; lp.style.right = left ? '10px' : 'auto';
+      const sw = 64, k = 240 / sw, sx = ix - sw / 2, sy = iy - sw / 2;
+      lg.fillStyle = '#000'; lg.fillRect(0, 0, 240, 240);
+      const x0 = Math.max(0, sx), y0 = Math.max(0, sy), x1 = Math.min(src.width, sx + sw), y1 = Math.min(src.height, sy + sw);
+      if (x1 > x0 && y1 > y0) lg.drawImage(src, x0, y0, x1 - x0, y1 - y0, (x0 - sx) * k, (y0 - sy) * k, (x1 - x0) * k, (y1 - y0) * k);
+      const P = mode === 'rect' ? [[rect.l, rect.t], [rect.r, rect.t], [rect.r, rect.b], [rect.l, rect.b]] : pts;
+      lg.strokeStyle = '#ff6a1a'; lg.lineWidth = 2; lg.beginPath(); P.forEach((p, i) => i ? lg.lineTo((p[0] - sx) * k, (p[1] - sy) * k) : lg.moveTo((p[0] - sx) * k, (p[1] - sy) * k)); lg.closePath(); lg.stroke();
+      lg.strokeStyle = 'rgba(255,255,255,.85)'; lg.lineWidth = 1; lg.beginPath(); lg.moveTo(120, 100); lg.lineTo(120, 140); lg.moveTo(100, 120); lg.lineTo(140, 120); lg.stroke();
+    }
+    const pos = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left - PAD) / scale, (e.clientY - r.top - PAD) / scale]; };
+    stage.addEventListener('pointerdown', e => {
+      const [x, y] = pos(e); let best = null, bd = 44 / scale, hx = 0, hy = 0;
+      handles().forEach((h, i) => { const dd = Math.hypot(h.x - x, h.y - y); if (dd < bd) { bd = dd; best = { i, e: h.e, ox: h.x - x, oy: h.y - y }; } });
+      if (best) { drag = best; stage.setPointerCapture(e.pointerId); const hh = handles()[best.i]; loupe(hh.x, hh.y); }
+    });
+    stage.addEventListener('pointermove', e => {
+      if (!drag) return; let [x, y] = pos(e); x += drag.ox; y += drag.oy; x = Math.max(0, Math.min(src.width, x)); y = Math.max(0, Math.min(src.height, y));
+      if (mode === 'persp') pts[drag.i] = [x, y];
+      else { const m = 24, ed = drag.e; if (ed.includes('l')) rect.l = Math.min(x, rect.r - m); if (ed.includes('r')) rect.r = Math.max(x, rect.l + m); if (ed.includes('t')) rect.t = Math.min(y, rect.b - m); if (ed.includes('b')) rect.b = Math.max(y, rect.t + m); }
+      draw(); loupe(x, y);
+    });
+    const end = () => { drag = null; lp.style.display = 'none'; };
+    stage.addEventListener('pointerup', end); stage.addEventListener('pointercancel', end);
+
+    ov.querySelectorAll('[data-m]').forEach(b => b.onclick = () => {
+      if (b.dataset.m === mode) return;
+      if (b.dataset.m === 'persp') pts = [[rect.l, rect.t], [rect.r, rect.t], [rect.r, rect.b], [rect.l, rect.b]];
+      else { const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); rect = { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) }; }
+      mode = b.dataset.m; ov.querySelectorAll('[data-m]').forEach(x => x.classList.toggle('on', x === b)); draw();
+    });
+    $('#auto', ov).onclick = () => { reset(); draw(); };
+    $('#all', ov).onclick = () => { rect = { l: 0, t: 0, r: src.width, b: src.height }; pts = [[0, 0], [src.width, 0], [src.width, src.height], [0, src.height]]; draw(); };
+    $('#rot', ov).onclick = () => {
+      const c = document.createElement('canvas'); c.width = src.height; c.height = src.width; const x = c.getContext('2d');
+      x.translate(c.width, 0); x.rotate(Math.PI / 2); x.drawImage(src, 0, 0); src = c; reset(); layout();
+    };
+    const close = v => { window.removeEventListener('resize', layout); ov.remove(); resolve(v); };
+    $('#no', ov).onclick = () => close(null);
+    $('#ok', ov).onclick = () => {
+      try {
+        let out;
+        if (mode === 'rect') {
+          const w = Math.round(rect.r - rect.l), h = Math.round(rect.b - rect.t), [W, H] = finalSize(w, h);
+          out = document.createElement('canvas'); out.width = W; out.height = H;
+          const x = out.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, rect.l, rect.t, w, h, 0, 0, W, H);
+        } else {
+          const d = (a, b) => Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]);
+          const [W, H] = finalSize((d(0, 1) + d(3, 2)) / 2, (d(0, 3) + d(1, 2)) / 2);
+          out = warp(src, pts, W, H);
+        }
+        close(out);
+      } catch (e) { fail('Envoi d\'image', e, 'Détourage impossible.'); }
+    };
+    window.addEventListener('resize', layout);
+    reset(); layout(); requestAnimationFrame(layout);
+  });
+}
+
+// ===================== CODE COMMUN (identique dans la version Claude et la version gratuite) =====================
+// Les 4 branchements propres à chaque version : Platform (démarrage / connexion), Store (données), Files (photos), AI (lecture IA).
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const app = $('#app');
+let stopVitrine = null, started = false, routeSeq = 0, lastSig = '';
+const lists = { players: [], teams: [], sports: [], brands: [], collections: [], parallels: [], binders: [] };
+const GRADERS = ['PSA', 'BGS', 'SGC', 'CGC'];
+let cards = [];
+const urlCache = {};
+const U = id => (id && urlCache[id]) || null;
+const PRESET_RUNS = [5, 10, 25, 50, 99, 100, 199, 250];
+const collator = new Intl.Collator('fr');
+
+async function resolveUrls(ids) {
+  const need = [...new Set(ids.filter(Boolean))].filter(i => !urlCache[i]);
+  if (!need.length) return;
+  try { Object.assign(urlCache, await Files.urls(need)); } catch (e) { fail('Envoi d\'image', e, 'Photos indisponibles.'); }
+}
+
+// ---------- Messages d'erreur clairs ----------
+let toastTimer;
+function toast(title, msg, ok = false, ms = 7000) {
+  const t = $('#toast'); t.className = ok ? 'ok' : '';
+  $('div', t).innerHTML = `<b>${esc(title)}</b>${esc(msg)}`;
+  t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+}
+// Les branchements transforment toute erreur en { code, message } avec un code parmi ceux de la table ci-dessous.
+function fail(source, e, hint = '') {
+  const code = (e && e.code) || 'other', raw = (e && (e.message || e.error_description)) || String(e || '');
+  const map = {
+    network: ['Réseau', 'Impossible de joindre le serveur. Vérifie ta connexion puis réessaie.'],
+    permission: ['Permissions', 'Accès refusé : session expirée, ou droits insuffisants (seul le propriétaire peut modifier la collection). ' + raw],
+    quota: ['Base de données', 'L\'espace de stockage est plein. Supprime des cartes ou des photos inutiles. ' + raw],
+    too_large: ['Envoi d\'image', 'La photo est trop lourde.'],
+    bad_type: ['Envoi d\'image', 'Ce format d\'image n\'est pas accepté.'],
+    ai_denied: ['IA', 'La lecture par l\'IA n\'a pas été autorisée. Relance-la et accepte la demande.'],
+    ai_busy: ['IA', 'Trop de demandes ou limite atteinte. Réessaie dans un moment.'],
+    ai_unreadable: ['IA', 'La réponse de l\'IA est illisible. Réessaie.'],
+    ai_images: ['IA', 'L\'IA n\'a pas pu lire les images (type, taille ou envoi). Remplace-les puis réessaie. ' + raw],
+    ai_unavailable: ['IA', 'L\'IA est indisponible pour le moment. ' + raw],
+    ai_expired: ['Permissions', 'Ta session a expiré : recharge la page et reconnecte-toi.']
+  };
+  let [cat, msg] = map[code] || [source, raw || 'Erreur inconnue.'];
+  if (code === 'quota' && source === 'Envoi d\'image') cat = source;
+  toast('Erreur — ' + cat, (hint ? hint + ' ' : '') + msg);
+  console.error(source, e);
+}
+
+// ---------- Démarrage ----------
+function setData(d) {
+  for (const k of Object.keys(lists)) lists[k] = [...(d[k] || [])].sort((a, b) => collator.compare(String(a.name), String(b.name)));
+  cards = [...(d.cards || []).filter(c => !pendingDel.has(c.id))].sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+  cards.forEach(c => { c.name = buildName(c); });
+}
+(async function main() {
+  try {
+    if (!(await Platform.start())) return;
+    $('#btnOut').hidden = !Platform.signOut;
+    if (Platform.signOut) $('#btnOut').onclick = () => Platform.signOut();
+    $('#logo').onclick = () => { location.hash = ''; };
+    setData(await Store.load());
+    Store.onChange(d => { setData(d); onData(); });
+    window.addEventListener('hashchange', route);
+    started = true; route();
+  } catch (e) { fail('Base de données', e, 'Démarrage impossible.'); app.innerHTML = '<div class="empty"><b>Chargement impossible</b>Vérifie ta connexion puis recharge la page.</div>'; }
+})();
+
+function onData() {
+  if (!started) return;
+  const [page, id] = parseHash();
+  if (page === 'list' || page === 'stats') return route();
+  if (page === 'card') { const c = cards.find(x => x.id === id); if ((c ? JSON.stringify(c) : 'x') !== lastSig) route(); }
+}
+function parseHash() {
+  const h = location.hash.replace(/^#/, '');
+  if (h === 'new') return ['new'];
+  if (h === 'stats') return ['stats'];
+  if (h === 'batch') return ['batch'];
+  if (h === 'lists') return ['lists'];
+  const m = h.match(/^(c|e)-(.+)$/);
+  if (m) return [m[1] === 'c' ? 'card' : 'edit', m[2]];
+  return ['list'];
+}
+function route() {
+  if (!started) return;
+  if (stopVitrine) { stopVitrine(); stopVitrine = null; }
+  { const sb = $('#selbar'); if (sb) sb.remove(); }
+  const my = ++routeSeq, [page, id] = parseHash();
+  document.querySelectorAll('.nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === (page === 'lists' ? '#lists' : page === 'stats' ? '#stats' : page === 'list' ? '#' : 'x')));
+  let p;
+  try {
+    p = page === 'lists' ? viewLists(my) : page === 'batch' ? viewBatch(my) : page === 'stats' ? viewStats(my) : page === 'card' ? viewCard(id, my) : page === 'new' ? viewForm(null, my) : page === 'edit' ? viewForm(id, my) : viewList(my);
+  } catch (e) { p = Promise.reject(e); }
+  Promise.resolve(p).catch(e => { fail('Base de données', e); app.innerHTML = '<div class="empty">Affichage impossible.</div>'; });
+}
+const go = h => { location.hash = h; };
+
+// ---------- Utilitaires cartes ----------
+const byId = (t, id) => lists[t].find(x => x.id === id);
+function runStr(c) {
+  if (!c.print_run) return '';
+  const pad = n => String(n).padStart(+c.num_pad || 0, '0');   // « 008/008 » quand la carte est imprimée avec des zéros
+  if (c.print_run === 1) return pad(1) + '/' + pad(1);
+  return (c.serial_number ? pad(c.serial_number) : '') + '/' + pad(c.print_run);
+}
+function buildName(c) {
+  const col = byId('collections', c.collection_id);
+  const parts = [
+    byId('players', c.player_id)?.name,
+    byId('brands', c.brand_id)?.name,
+    col ? (col.name + (col.year ? ' ' + col.year : '')) : '',
+    byId('parallels', c.parallel_id)?.name,
+    runStr(c)
+  ].filter(Boolean);
+  return parts.join(' — ') || 'Carte sans nom';
+}
+
+function makeDoc(d, files, prev) {
+  const doc = {
+    name: buildName(d),
+    player_id: d.player_id || null, team_id: d.team_id || null, sport_id: d.sport_id || null,
+    brand_id: d.brand_id || null, collection_id: d.collection_id || null, parallel_id: d.parallel_id || null,
+    card_number: String(d.card_number || '').replace(/^#/, ''),
+    print_run: d.print_run || null, serial_number: d.print_run ? (d.serial_number || null) : null,
+    is_rookie: !!d.is_rookie, is_auto: !!d.is_auto, is_memorabilia: !!d.is_memorabilia,
+    notes: d.notes || '', is_graded: !!d.is_graded, grader: d.is_graded ? (d.grader || '') : '', grade_value: d.is_graded ? (d.grade_value || '') : '', cert_number: d.is_graded ? (d.cert_number || '') : '', binder_id: d.binder_id || null, price_paid: d.price_paid > 0 ? d.price_paid : null, bought_at: d.bought_at || '', favorite: !!d.favorite, front_file: files.front || null, back_file: files.back || null, front_thumb: files.front_thumb || null, back_thumb: files.back_thumb || null,
+    needs_check: '',
+    num_pad: d.print_run ? (+d.num_pad || 0) : 0,
+    created_at: prev?.created_at || Date.now(), updated_at: Date.now()
+  };
+  return doc;
+}
+
+// ---------- Vérification de la numérotation ----------
+const COMMON_RUNS = new Set([1, 2, 3, 5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 49, 50, 60, 65, 70, 75, 80, 88, 99, 100, 125, 149, 150, 175, 199, 200, 249, 250, 299, 300, 349, 399, 400, 499, 500, 799, 999, 1000, 1999, 2000]);
+function checkNumbering(d, selfId) {
+  const errors = [], warns = [];
+  const run = d.print_run, ser = d.serial_number, num = String(d.card_number || '');
+  if (ser && !run) errors.push('Un exemplaire est indiqué sans tirage.');
+  if (run && ser && ser > run) errors.push(`L'exemplaire (${ser}) dépasse le tirage (/${run}).`);
+  if (run === 1 && ser && ser !== 1) errors.push('Une carte 1/1 ne peut avoir que l\'exemplaire 1.');
+  if (/^\s*#?\s*\d+\s*\/\s*\d+\s*$/.test(num)) warns.push(`Le numéro de carte « ${num.trim()} » ressemble à une numérotation de tirage : le numéro de checklist est celui de la série (ex. 43, S-RL).`);
+  if (run && run > 100 && !COMMON_RUNS.has(run)) warns.push(`Le tirage /${run} est inhabituel : vérifie qu'il est bien lisible sur la carte.`);
+  if (run && ser) {
+    const same = cards.find(x => x.id !== selfId && x.serial_number === ser && x.print_run === run && x.player_id === d.player_id && (x.collection_id || '') === (d.collection_id || '') && (x.parallel_id || '') === (d.parallel_id || '') && (x.card_number || '') === num.replace(/^#/, ''));
+    if (same) warns.push(`L'exemplaire ${ser}/${run} de cette carte est déjà enregistré (« ${same.name} »).`);
+  }
+  return { errors, warns };
+}
+// Cartes à contrôler : joueur manquant ou numérotation douteuse (liste, lot)
+function issuesOf(c) {
+  const r = checkNumbering(c, c.id), out = [...r.errors, ...r.warns.filter(w => !/déjà enregistré/.test(w))];
+  if (!c.player_id) out.unshift('Joueur à compléter.');
+  if (c.needs_check) out.unshift(c.needs_check);
+  return out;
+}
+
+// ---------- Création de listes (joueurs, marques…) et lecture IA appliquée à un brouillon ----------
+async function upsertGlobal(t, name, year = '') {
+  name = name.trim(); year = (year || '').trim();
+  const ex = lists[t].find(x => x.name.toLowerCase() === name.toLowerCase() && (t !== 'collections' || (x.year || '') === year));
+  if (ex) return ex;
+  const rec = t === 'collections' ? { name, year } : { name };
+  const id = Store.newId(); await Store.save(t, id, rec);
+  const row = { id, ...rec }; lists[t] = [...lists[t].filter(x => x.id !== id), row].sort((a, b) => collator.compare(String(a.name), String(b.name)));
+  return row;
+}
+async function applyAI(c, d) {
+  const set = async (key, t, name, year) => { if (name && String(name).trim()) d[key] = (await upsertGlobal(t, String(name), year)).id; };
+  await set('player_id', 'players', c.player); await set('team_id', 'teams', c.team); await set('sport_id', 'sports', c.sport);
+  await set('brand_id', 'brands', c.brand); await set('collection_id', 'collections', c.collection, c.year ? String(c.year) : ''); await set('parallel_id', 'parallels', c.parallel);
+  if (c.card_number) d.card_number = String(c.card_number).replace(/^#/, '');
+  if (Number.isFinite(+c.print_run) && +c.print_run > 0) { d.print_run = +c.print_run; d.serial_number = +c.serial_number > 0 ? +c.serial_number : (+c.print_run === 1 ? 1 : null); d.num_pad = +c.serial_digits >= 2 && +c.serial_digits <= 6 ? +c.serial_digits : 0; }
+  if (c.rookie) d.is_rookie = true; if (c.auto) d.is_auto = true; if (c.memorabilia) d.is_memorabilia = true;
+  if (c.graded && String(c.grade || '').trim()) { d.is_graded = true; d.grader = String(c.grader || '').trim().toUpperCase() || 'PSA'; d.grade_value = String(c.grade).trim(); if (c.cert_number) d.cert_number = String(c.cert_number).replace(/\D/g, ''); }
+  return d;
+}
+function knownText() {
+  const cut = a => [...new Set(a)].slice(0, 80).join(' ; ') || '—';
+  return `collections : ${cut(lists.collections.map(x => x.name + (x.year ? ' (' + x.year + ')' : '')))} | marques : ${cut(lists.brands.map(x => x.name))} | équipes : ${cut(lists.teams.map(x => x.name))} | sports : ${cut(lists.sports.map(x => x.name))} | parallèles : ${cut(lists.parallels.map(x => x.name))} | joueurs : ${cut(lists.players.map(x => x.name))}`;
+}
+const blankDraft = () => ({ player_id: null, team_id: null, sport_id: null, brand_id: null, collection_id: null, parallel_id: null, card_number: '', print_run: null, serial_number: null, is_rookie: false, is_auto: false, is_memorabilia: false, notes: '', is_graded: false, grader: '', grade_value: '', cert_number: '', price_paid: null, bought_at: '', binder_id: null, favorite: false });
+
+// ---------- Suppression avec « Annuler » ----------
+const pendingDel = new Map();
+function toastAction(title, msg, label, fn, ms = 7000) {
+  const t = $('#toast'); t.className = 'ok';
+  $('div', t).innerHTML = `<b>${esc(title)}</b>${esc(msg)} <button class="btn small" id="tAct" style="margin-top:8px;min-height:36px">${esc(label)}</button>`;
+  t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+  $('#tAct').onclick = () => { t.hidden = true; clearTimeout(toastTimer); fn(); };
+}
+function scheduleDelete(list) {
+  list.forEach(c => pendingDel.set(c.id, c));
+  cards = cards.filter(c => !pendingDel.has(c.id));
+  const timer = setTimeout(async () => {
+    for (const c of list) {
+      if (!pendingDel.has(c.id)) continue;
+      try { await Store.remove('cards', c.id); for (const a of [c.front_file, c.back_file, c.front_thumb, c.back_thumb]) if (a) await Files.remove(a); }
+      catch (e) { fail('Base de données', e, 'Suppression impossible.'); cards = [c, ...cards]; }
+      pendingDel.delete(c.id);
+    }
+    route();
+  }, 7000);
+  toastAction('Supprimée' + (list.length > 1 ? 's' : ''), list.length > 1 ? list.length + ' cartes supprimées.' : 'La carte a été supprimée.', 'Annuler', () => {
+    clearTimeout(timer); list.forEach(c => pendingDel.delete(c.id));
+    cards = [...cards, ...list].sort((a, b) => (b.created_at || 0) - (a.created_at || 0)); route();
+  });
+}
+
+// ---------- Liste ----------
+const view = { q: '', sort: 'recent', sport: '', brand: '', binder: '', mode: 'grid', fav: false, rookie: false, auto: false, mem: false, num: false, graded: false };
+const SORTS = [['recent', 'Récentes'], ['old', 'Anciennes'], ['player', 'Joueur A→Z'], ['paid', 'Prix payé ↓'], ['run', 'Plus rares'], ['num', 'N° de carte'], ['coll', 'Collection']];
+const collName = c => { const x = byId('collections', c.collection_id); return x ? x.name + (x.year ? ' ' + x.year : '') : '— Sans collection'; };
+const sel = new Set(); let selMode = false;
+function filtered() {
+  const q = view.q.trim().toLowerCase();
+  let rows = cards.filter(c => (!q || String(c.name).toLowerCase().includes(q) || String(c.notes || '').toLowerCase().includes(q) || (c.is_graded && (String(c.grader || '') + ' ' + String(c.grade_value || '')).toLowerCase().includes(q)))
+    && (!view.sport || c.sport_id === view.sport) && (!view.brand || c.brand_id === view.brand) && (!view.binder || c.binder_id === view.binder) && (!view.graded || c.is_graded)
+    && (!view.fav || c.favorite) && (!view.rookie || c.is_rookie) && (!view.auto || c.is_auto) && (!view.mem || c.is_memorabilia) && (!view.num || c.print_run));
+  const pn = c => byId('players', c.player_id)?.name || '';
+  const sorters = {
+    recent: (a, b) => (b.created_at || 0) - (a.created_at || 0), old: (a, b) => (a.created_at || 0) - (b.created_at || 0),
+    player: (a, b) => collator.compare(pn(a), pn(b)), paid: (a, b) => (b.price_paid || 0) - (a.price_paid || 0),
+    run: (a, b) => (a.print_run || 1e9) - (b.print_run || 1e9),
+    num: (a, b) => new Intl.Collator('fr', { numeric: true }).compare(String(a.card_number || '~'), String(b.card_number || '~')),
+    coll: (a, b) => collator.compare(collName(a), collName(b)) || new Intl.Collator('fr', { numeric: true }).compare(String(a.card_number || '~'), String(b.card_number || '~'))
+  };
+  return rows.sort(sorters[view.sort]);
+}
+async function viewList(my) {
+  await resolveUrls(cards.map(c => c.front_thumb || c.front_file));
+  if (my !== routeSeq) return;
+  const opts = (t, v) => '<option value="">' + ({ sports: 'Sports', brands: 'Marques', binders: 'Classeurs' })[t] + '</option>' + lists[t].filter(x => cards.some(c => c[({ sports: 'sport_id', brands: 'brand_id', binders: 'binder_id' })[t]] === x.id)).map(x => `<option value="${esc(x.id)}" ${x.id === v ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
+  const chip = (k, l) => `<button class="chip ${view[k] ? 'on' : ''}" data-chip="${k}">${l}</button>`;
+  app.innerHTML = `<div class="search"><input id="q" type="search" placeholder="Rechercher une carte…" value="${esc(view.q)}"></div>
+    <div class="row" style="margin-bottom:10px"><button class="btn primary block" id="add">+ Ajouter</button><button class="btn block" id="addb">Ajouter en lot</button></div>
+    <div class="chips">${chip('fav', '♥ Favoris')}${chip('rookie', 'Rookie')}${chip('auto', 'Autographe')}${chip('mem', 'Memorabilia')}${chip('num', 'Numérotées')}${chip('graded', 'Gradées')}</div>
+    <div class="grid2 filt">
+      <select id="fs" aria-label="Sport">${opts('sports', view.sport)}</select><select id="fb" aria-label="Marque">${opts('brands', view.brand)}</select></div>
+    ${lists.binders.length ? `<select id="fc" aria-label="Classeur" class="filt1">${opts('binders', view.binder)}</select>` : ''}
+    <div class="row sortrow"><select id="so" aria-label="Tri">${SORTS.map(([k, l]) => `<option value="${k}" ${view.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <div class="mono cnt" id="cnt"></div>
+      <button class="btn small ico" id="vm" aria-label="Changer l'affichage" title="Affichage">${view.mode === 'grid' ? '☰' : '▦'}</button>
+      <button class="btn small ico ${selMode ? 'on' : ''}" id="selb" aria-label="${selMode ? 'Quitter la sélection' : 'Sélectionner'}" title="Sélectionner">${selMode ? '✕' : '☑'}</button>
+      <button class="btn small ico" id="show" aria-label="Diaporama" title="Diaporama">▶</button></div>
+    <div class="cards" id="grid"></div>`;
+  $('#add').onclick = () => go('new');
+  $('#addb').onclick = () => go('batch');
+  $('#show').onclick = () => startSlideshow(filtered());
+  $('#selb').onclick = () => { selMode = !selMode; sel.clear(); viewList(routeSeq); };
+  const tagsHTML = c => {
+    const run = runStr(c);
+    const t = (run ? `<span class="stamp sm">${esc(run)}</span>` : '') + (c.is_graded ? `<span class="badge sm gd">${esc(c.grader)} ${esc(c.grade_value)}</span>` : '') + (c.is_rookie ? '<span class="badge sm">Rookie</span>' : '') + (c.is_auto ? '<span class="badge sm">Auto</span>' : '') + (c.is_memorabilia ? '<span class="badge sm">Memo</span>' : '');
+    return t ? `<div class="tg">${t}</div>` : '';
+  };
+  const tileHTML = c => {
+    const tu = U(c.front_thumb || c.front_file), img = tu ? `<img loading="lazy" decoding="async" alt="" src="${esc(tu)}">` : '';
+    const mark = (c.favorite ? '<span class="fav">♥</span>' : '') + (issuesOf(c).length ? '<span class="warnmk" title="À vérifier">⚠</span>' : '') + (selMode ? `<span class="selbox">${sel.has(c.id) ? '✓' : ''}</span>` : '');
+    const cls = 'tile' + (sel.has(c.id) ? ' sel' : '');
+    if (view.mode === 'list') return `<div class="${cls} lrow" tabindex="0" data-id="${esc(c.id)}"><div class="im">${img}${mark}</div><div class="t"><b>${esc(byId('players', c.player_id)?.name || c.name)}</b><br>${esc(c.name)}${tagsHTML(c)}</div></div>`;
+    return `<div class="${cls}" tabindex="0" data-id="${esc(c.id)}"><div class="im">${img}${mark}</div><div class="t">${esc(c.name)}${tagsHTML(c)}</div></div>`;
+  };
+  const bar = () => {
+    let b = $('#selbar'); if (!selMode) { if (b) b.remove(); return; }
+    if (!b) { b = document.createElement('div'); b.id = 'selbar'; b.className = 'selbar'; document.body.appendChild(b); }
+    const n = sel.size;
+    b.innerHTML = `<span>${n} sélectionnée${n > 1 ? 's' : ''}</span><button class="btn small" data-a="all">Tout</button><button class="btn small" data-a="bin" ${n ? '' : 'disabled'}>Classeur</button><button class="btn small" data-a="fav" ${n ? '' : 'disabled'}>♥</button><button class="btn small danger" data-a="del" ${n ? '' : 'disabled'}>Supprimer</button>`;
+    b.querySelectorAll('[data-a]').forEach(x => x.onclick = () => bulk(x.dataset.a));
+  };
+  const bulk = async a => {
+    const list = cards.filter(c => sel.has(c.id));
+    try {
+      if (a === 'all') { filtered().forEach(c => sel.add(c.id)); draw(); return; }
+      if (a === 'del') { if (!(await askConfirm('Supprimer ' + list.length + ' carte' + (list.length > 1 ? 's' : ''), 'Tu pourras annuler pendant quelques secondes.'))) return; selMode = false; sel.clear(); scheduleDelete(list); viewList(routeSeq); return; }
+      if (a === 'fav') { const on = !list.every(c => c.favorite); for (const c of list) { const { id: _i, ...doc } = c; doc.favorite = on; doc.updated_at = Date.now(); await Store.save('cards', c.id, doc); c.favorite = on; } toast('Favoris', on ? 'Ajoutées aux favoris.' : 'Retirées des favoris.', true, 2500); draw(); return; }
+      if (a === 'bin') {
+        const r = await askBinder(); if (r === null) return;
+        let id = r.id; if (r.name) id = (await upsertGlobal('binders', r.name)).id;
+        for (const c of list) { const { id: _i, ...doc } = c; doc.binder_id = id || null; doc.updated_at = Date.now(); await Store.save('cards', c.id, doc); c.binder_id = id || null; }
+        toast('Classeur', list.length + ' carte' + (list.length > 1 ? 's' : '') + ' déplacée' + (list.length > 1 ? 's' : '') + '.', true, 2500); selMode = false; sel.clear(); viewList(routeSeq);
+      }
+    } catch (e) { fail('Base de données', e); }
+  };
+  const draw = () => {
+    const rows = filtered();
+    $('#cnt').textContent = rows.length + ' / ' + cards.length;
+    const anyFilter = view.q || view.binder || view.graded || view.sport || view.brand || view.fav || view.rookie || view.auto || view.mem || view.num;
+    $('#grid').className = view.mode === 'grid' ? 'cards' : 'rows';
+    let html = '', last = null;
+    for (const c of rows) {
+      if (view.sort === 'coll') { const g = collName(c); if (g !== last) { html += `<h4 class="grp">${esc(g)}</h4>`; last = g; } }
+      html += tileHTML(c);
+    }
+    $('#grid').innerHTML = rows.length ? html : (anyFilter ? '<div class="empty" style="grid-column:1/-1">Aucune carte ne correspond.</div>' : '<div class="empty" style="grid-column:1/-1"><b>Ta collection est vide</b>Ajoute ta première carte : une photo du recto, une du verso, et l\'IA remplit la fiche.</div>');
+    document.querySelectorAll('.tile').forEach(t => {
+      const act = () => { if (selMode) { sel.has(t.dataset.id) ? sel.delete(t.dataset.id) : sel.add(t.dataset.id); draw(); } else go('c-' + t.dataset.id); };
+      t.onclick = act; t.onkeydown = e => { if (e.key === 'Enter') act(); };
+    });
+    bar();
+  };
+  $('#q').oninput = e => { view.q = e.target.value; draw(); };
+  $('#fs').onchange = e => { view.sport = e.target.value; draw(); };
+  $('#fb').onchange = e => { view.brand = e.target.value; draw(); };
+  if ($('#fc')) $('#fc').onchange = e => { view.binder = e.target.value; draw(); };
+  $('#vm').onclick = () => { view.mode = view.mode === 'grid' ? 'list' : 'grid'; viewList(routeSeq); };
+  $('#so').onchange = e => { view.sort = e.target.value; draw(); };
+  if (!selMode) { const sb = $('#selbar'); if (sb) sb.remove(); }
+  document.querySelectorAll('[data-chip]').forEach(b => b.onclick = () => { view[b.dataset.chip] = !view[b.dataset.chip]; b.classList.toggle('on', view[b.dataset.chip]); draw(); });
+  draw();
+}
+
+// ---------- Statistiques ----------
+function topBy(keyFn, n = 5) {
+  const m = new Map(); cards.forEach(c => { const k = keyFn(c); if (k) m.set(k, (m.get(k) || 0) + 1); });
+  return [...m.entries()].sort((a, b) => b[1] - a[1] || collator.compare(a[0], b[0])).slice(0, n);
+}
+async function viewStats(my) {
+  if (my !== routeSeq) return;
+  const n = cards.length;
+  const cnt = f => cards.filter(f).length;
+  const paid = cards.reduce((t, c) => t + (+c.price_paid || 0), 0), paidN = cnt(c => c.price_paid > 0);
+  const fmt = v => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
+  const block = (title, rows) => `<div class="card-sec"><h3>${title}</h3>${rows.length ? rows.map(([k, v]) => { const w = Math.round(v / rows[0][1] * 100); return `<div class="bar"><span>${esc(k)}</span><i style="width:${w}%"></i><b>${v}</b></div>`; }).join('') : '<p class="note">Rien pour le moment.</p>'}</div>`;
+  const rare = [...cards].filter(c => c.print_run).sort((a, b) => a.print_run - b.print_run).slice(0, 5);
+  app.innerHTML = `<h2 style="font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:16px">Statistiques</h2>
+    <div class="stats"><div><b>${n}</b><span>cartes</span></div><div><b>${cnt(c => c.print_run)}</b><span>numérotées</span></div><div><b>${cnt(c => c.is_rookie)}</b><span>rookies</span></div>
+      <div><b>${cnt(c => c.is_auto)}</b><span>autographes</span></div><div><b>${cnt(c => c.is_memorabilia)}</b><span>memorabilia</span></div><div><b>${cnt(c => c.print_run === 1)}</b><span>1/1</span></div><div><b>${cnt(c => c.is_graded)}</b><span>gradées</span></div></div>
+    <div class="card-sec"><h3>Prix payé</h3><div style="font:600 34px var(--f-display);letter-spacing:.04em">${fmt(paid)}</div><p class="note">${paidN} carte${paidN > 1 ? 's' : ''} avec un prix d'achat renseigné.</p></div>
+    ${block('Par sport', topBy(c => byId('sports', c.sport_id)?.name))}${block('Par marque', topBy(c => byId('brands', c.brand_id)?.name))}
+    ${block('Joueurs les plus présents', topBy(c => byId('players', c.player_id)?.name))}${block('Par équipe', topBy(c => byId('teams', c.team_id)?.name))}${block('Par classeur', topBy(c => byId('binders', c.binder_id)?.name))}${block('Sociétés de gradation', topBy(c => c.is_graded ? c.grader : null))}
+    <div class="card-sec"><h3>Les plus rares</h3>${rare.length ? rare.map(c => `<div class="rare" data-id="${esc(c.id)}"><span>${esc(c.name)}</span><b class="mono">${esc(runStr(c))}</b></div>`).join('') : '<p class="note">Aucune carte numérotée.</p>'}</div>`;
+  document.querySelectorAll('.rare').forEach(r => r.onclick = () => go('c-' + r.dataset.id));
+}
+
+// ---------- Fiche + vitrine 3D ----------
+async function viewCard(id, my) {
+  const c = cards.find(x => x.id === id);
+  if (!c) { app.innerHTML = '<div class="empty"><b>Carte introuvable</b>Elle a peut-être été supprimée.</div><button class="btn block" id="bk">← Retour</button>'; $('#bk').onclick = () => go(''); return; }
+  lastSig = JSON.stringify(c);
+  await resolveUrls([c.front_file, c.back_file]);
+  const f = U(c.front_file), b = U(c.back_file);
+  const dims = await imgDims(f);
+  if (my !== routeSeq) return;
+  const land = dims && dims.w > dims.h;
+  const W = land ? 300 : 210, H = land ? 214 : 294;
+  const run = runStr(c);
+  app.innerHTML = `
+    <div class="vitrine" id="vit" style="--w:${W}px;--h:${H}px">
+      <div class="hint">Un doigt : tourner · deux doigts : zoomer</div><button class="vfull" id="fs" aria-label="Plein écran">⤢</button>
+      <div class="pedestal"></div>
+      <div class="persp"><div class="floatwrap"><div class="rot" id="rot">
+        <div class="face front">${f ? `<img alt="Recto" src="${esc(f)}">` : '<div class="ph">Pas de recto</div>'}<div class="gloss"></div></div>
+        <div class="face back">${b ? `<img alt="Verso" src="${esc(b)}">` : '<div class="ph">Pas de verso</div>'}<div class="gloss"></div></div>
+      </div></div></div>
+      <div class="thumbs"><button data-a="0" class="on" aria-label="Recto">${f ? `<img alt="" src="${esc(f)}">` : ''}</button><button data-a="180" aria-label="Verso">${b ? `<img alt="" src="${esc(b)}">` : ''}</button></div>
+    </div>
+    <div class="row" style="align-items:flex-start;gap:12px;margin:8px 0 12px"><h2 style="font-size:23px;font-weight:700;letter-spacing:-.02em;line-height:1.2;flex:1">${esc(c.name)}</h2><button class="heart ${c.favorite ? 'on' : ''}" id="fav" aria-label="Favori" aria-pressed="${!!c.favorite}">♥</button></div>
+    <div style="margin-bottom:12px">${run ? `<span class="stamp">${esc(run)}</span> ` : ''}${c.is_rookie ? '<span class="badge">Rookie</span>' : ''}${c.is_auto ? '<span class="badge">Autographe</span>' : ''}${c.is_memorabilia ? '<span class="badge">Memorabilia</span>' : ''}${c.is_graded ? `<span class="badge">${esc(c.grader)} ${esc(c.grade_value)}</span>` : ''}</div>
+    <div class="card-sec"><div class="kv">
+      <span>Joueur</span><span>${esc(byId('players', c.player_id)?.name || '—')}</span>
+      <span>Équipe</span><span>${esc(byId('teams', c.team_id)?.name || '—')}</span>
+      <span>Sport</span><span>${esc(byId('sports', c.sport_id)?.name || '—')}</span>
+      <span>Marque</span><span>${esc(byId('brands', c.brand_id)?.name || '—')}</span>
+      <span>Collection</span><span>${(() => { const x = byId('collections', c.collection_id); return esc(x ? x.name + (x.year ? ' ' + x.year : '') : '—'); })()}</span>
+      <span>Parallèle</span><span>${esc(byId('parallels', c.parallel_id)?.name || '—')}</span>
+      <span>N° de carte</span><span class="mono">${esc(c.card_number || '—')}</span>
+      <span>Tirage</span><span class="mono">${esc(run || 'Non numérotée')}</span>
+      ${c.is_graded ? `<span>Gradation</span><span><b class="mono" style="color:var(--gold)">${esc(c.grader)} ${esc(c.grade_value)}</b>${c.cert_number ? `<br><span class="mono" style="font-size:13px;color:var(--mute)">Certificat ${esc(c.cert_number)}</span>` : ''}</span>` : ''}
+      <span>Classeur</span><span>${esc(byId('binders', c.binder_id)?.name || '—')}</span>
+      <span>Prix payé</span><span class="mono">${c.price_paid > 0 ? esc(new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(c.price_paid)) + (c.bought_at ? ' · ' + esc(new Date(c.bought_at + 'T12:00').toLocaleDateString('fr-FR')) : '') : (c.bought_at ? esc(new Date(c.bought_at + 'T12:00').toLocaleDateString('fr-FR')) : '—')}</span>
+    </div>${c.notes ? `<p style="margin:12px 0 0;color:var(--mute);white-space:pre-wrap;overflow-wrap:anywhere">${esc(c.notes)}</p>` : ''}</div>
+    <div class="row"><button class="btn block" id="bk">← Retour</button><button class="btn primary block" id="ed">Modifier</button></div>
+    <div style="height:10px"></div><button class="btn danger block" id="del">Supprimer cette carte</button>`;
+  $('#bk').onclick = () => go('');
+  $('#ed').onclick = () => go('e-' + c.id);
+  $('#fav').onclick = async e => {
+    const on = !c.favorite; e.currentTarget.classList.toggle('on', on);
+    try { const { id: _i, ...doc } = c; doc.favorite = on; doc.updated_at = Date.now(); await Store.save('cards', c.id, doc); c.favorite = on; lastSig = JSON.stringify(c); }
+    catch (er) { e.currentTarget.classList.toggle('on', !on); fail('Base de données', er, 'Favori non enregistré.'); }
+  };
+  $('#del').onclick = async () => {
+    if (!(await askConfirm('Supprimer cette carte', 'Tu pourras annuler pendant quelques secondes.'))) return;
+    scheduleDelete([c]); go('');
+  };
+  stopVitrine = startVitrine($('#vit'));
+  const fsb = $('#fs'); fsb.addEventListener('pointerdown', e => e.stopPropagation()); fsb.onclick = () => toggleFull($('#vit'));
+}
+function imgDims(url) {
+  return new Promise(r => { if (!url) return r(null); const i = new Image(); i.onload = () => r({ w: i.naturalWidth, h: i.naturalHeight }); i.onerror = () => r(null); i.src = url; });
+}
+function startVitrine(root, opts = {}) {
+  const rot = $('#rot', root);
+  let rx = -8, ry = 0, vx = 0, vy = 0, drag = false, lx = 0, ly = 0, target = null, raf, alive = true;
+  const apply = () => {
+    rot.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    const gx = ((((ry % 360) + 360) % 360) / 360 * 200 - 50) + rx * 0.6;
+    root.querySelectorAll('.gloss').forEach(g => g.style.setProperty('--gx', ((gx % 200) + 200) % 200 - 50 + '%'));
+  };
+  // un doigt : fait tourner la carte ; deux doigts : zoom et déplacement (comme une photo) ; double tape : zoom rapide
+  const ptrs = new Map(), persp = $('.persp', root);
+  let z = 1, tx = 0, ty = 0, pinch = null, tapAt = 0, moved = 0;
+  const applyZ = () => {
+    const mx = (z - 1) * root.clientWidth / 2, my = (z - 1) * root.clientHeight / 2;
+    tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty));
+    persp.style.transform = z === 1 ? '' : `translate(${tx}px,${ty}px) scale(${z})`;
+  };
+  const two = () => { const [p, q] = [...ptrs.values()]; return { d: Math.hypot(p.x - q.x, p.y - q.y) || 1, mx: (p.x + q.x) / 2, my: (p.y + q.y) / 2 }; };
+  const down = e => {
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); try { root.setPointerCapture(e.pointerId); } catch (_) {} target = null;
+    if (ptrs.size === 1) { drag = true; lx = e.clientX; ly = e.clientY; vx = vy = 0; moved = 0; }
+    else if (ptrs.size === 2) { drag = false; vx = vy = 0; const t = two(); pinch = { d: t.d, z0: z, mx: t.mx, my: t.my, tx0: tx, ty0: ty }; }
+  };
+  const move = e => {
+    if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && ptrs.size >= 2) { const t = two(); z = Math.max(1, Math.min(5, pinch.z0 * t.d / pinch.d)); tx = pinch.tx0 + (t.mx - pinch.mx); ty = pinch.ty0 + (t.my - pinch.my); if (z === 1) tx = ty = 0; applyZ(); return; }
+    if (!drag) return; const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; moved += Math.abs(dx) + Math.abs(dy);
+    const k = .6 / Math.sqrt(z);   // plus on zoome, plus le geste est fin
+    ry += dx * k; rx -= dy * k; vy = dx * k; vx = -dy * k;
+  };
+  const up = e => {
+    const had = ptrs.delete(e.pointerId);
+    if (!had) return;
+    if (ptrs.size < 2) pinch = null;
+    if (ptrs.size === 1) { const r = [...ptrs.values()][0]; drag = true; lx = r.x; ly = r.y; }
+    if (ptrs.size === 0) {
+      drag = false;
+      if (e.type === 'pointerup' && moved < 8) { const now = Date.now(); if (now - tapAt < 320) { z = z > 1 ? 1 : 2.5; tx = ty = 0; applyZ(); tapAt = 0; } else tapAt = now; }
+    }
+  };
+  root.addEventListener('pointerdown', down); root.addEventListener('pointermove', move); root.addEventListener('pointerup', up); root.addEventListener('pointercancel', up);
+  root.addEventListener('wheel', e => { e.preventDefault(); z = Math.max(1, Math.min(5, z * (e.deltaY < 0 ? 1.12 : .89))); if (z === 1) tx = ty = 0; applyZ(); }, { passive: false });
+  root.querySelectorAll('.thumbs button').forEach(btn => {
+    btn.addEventListener('pointerdown', e => e.stopPropagation());
+    btn.onclick = () => {
+      const a = +btn.dataset.a; const base = Math.round(ry / 360) * 360;
+      target = { y: base + a, x: -8 }; vx = vy = 0;
+      root.querySelectorAll('.thumbs button').forEach(x => x.classList.toggle('on', x === btn));
+    };
+  });
+  const loop = () => {
+    if (!alive) return;
+    if (!drag) {
+      if (target) { ry += (target.y - ry) * .14; rx += (target.x - rx) * .14; if (Math.abs(target.y - ry) < .3 && Math.abs(target.x - rx) < .3) { ry = target.y; rx = target.x; target = null; } }
+      else { rx += vx; ry += vy; vx *= .95; vy *= .95; if (Math.abs(vx) < .02) vx = 0; if (Math.abs(vy) < .02) vy = 0; if (opts.auto && !vx && !vy) { ry += .32; rx += (-8 - rx) * .02; } }
+    }
+    apply(); raf = requestAnimationFrame(loop);
+  };
+  loop();
+  return () => { alive = false; cancelAnimationFrame(raf); };
+}
+
+// ---------- Formulaire ----------
+const SELECTS = [
+  ['player_id', 'Joueur', 'players'], ['team_id', 'Équipe', 'teams'], ['sport_id', 'Sport', 'sports'],
+  ['brand_id', 'Marque', 'brands'], ['collection_id', 'Collection', 'collections'], ['parallel_id', 'Parallèle', 'parallels'],
+  ['binder_id', 'Classeur', 'binders']
+];
+async function viewForm(id, my) {
+  const card = id ? cards.find(x => x.id === id) : null;
+  if (id && !card) { app.innerHTML = '<div class="empty"><b>Carte introuvable</b></div><button class="btn block" id="bk">← Retour</button>'; $('#bk').onclick = () => go(''); return; }
+  if (card) { await resolveUrls([card.front_file, card.back_file]); if (my !== routeSeq) return; }
+  const d = card ? { ...card } : blankDraft();
+  if (!card) { try { const dr = JSON.parse(localStorage.getItem('mc_draft') || 'null'); if (dr && dr.d) { Object.assign(d, dr.d); setTimeout(() => toast('Brouillon retrouvé', 'Ta saisie précédente a été restaurée. Les photos sont à rechoisir.', true, 5000), 50); } } catch (_) {} }
+  const ai = new Set();
+  const photos = {
+    front: { blob: null, thumbBlob: null, url: U(card?.front_file), file: card?.front_file || null, thumb: card?.front_thumb || null },
+    back: { blob: null, thumbBlob: null, url: U(card?.back_file), file: card?.back_file || null, thumb: card?.back_thumb || null }
+  };
+  const canWrite = !!Files.canUpload;
+
+  const opt = (t, x) => `<option value="${esc(x.id)}">${esc(t === 'collections' ? x.name + (x.year ? ' ' + x.year : '') : x.name)}</option>`;
+  const runVal = () => d.print_run == null ? '' : (PRESET_RUNS.includes(d.print_run) ? String(d.print_run) : d.print_run === 1 ? '1' : 'other');
+
+  function render() {
+    app.innerHTML = `
+    <h2 style="font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:16px">${card ? 'Modifier la carte' : 'Nouvelle carte'}</h2>
+    <div class="card-sec"><h3>Photos</h3>
+      <div class="grid2">${['front', 'back'].map(k => `<div class="photo-slot"><b>${k === 'front' ? 'Recto' : 'Verso'}</b>
+        <div class="pv" id="pv-${k}">${photos[k].url ? `<img alt="" src="${esc(photos[k].url)}">` : 'Aucune photo'}</div>
+        <button class="btn small block" data-pick="${k}" ${canWrite ? '' : 'disabled'}>${photos[k].url ? 'Remplacer' : 'Choisir'}</button>
+        <button class="btn small block" data-recrop="${k}" style="margin-top:6px" ${canWrite && photos[k].url ? '' : 'hidden'}>Recadrer</button>
+        <input type="file" id="file-${k}" accept="image/*" data-file="${k}" style="display:none"></div>`).join('')}</div>
+      <div style="height:12px"></div>
+      <button class="btn block" id="btnAI" ${AI.available ? '' : 'disabled'}>✨ Remplir avec l'IA (recto + verso)</button>
+      <p class="note">${canWrite ? 'Sur Android, si le choix de photo ne s\'ouvre pas dans l\'application Claude, ouvre la page dans Chrome.' : 'Les photos ne peuvent être ajoutées que par le propriétaire de la page.'}</p>
+    </div>
+    <div class="card-sec"><h3>La carte</h3>
+      ${SELECTS.map(([k, label, t]) => `<div class="field" data-f="${k}"><label class="l" for="s-${k}">${label}</label><div class="row">
+        <select id="s-${k}" data-k="${k}"><option value="">—</option>${lists[t].map(x => opt(t, x)).join('')}</select>
+        <button class="btn small" data-new="${t}" style="flex:none">+ Créer</button></div></div>`).join('')}
+      <div class="field" data-f="card_number"><label class="l" for="num">N° de carte (checklist)</label><input id="num" data-k="card_number" placeholder="ex. 43, S-RL, PS-AS" class="mono"></div>
+      <div class="field" data-f="print_run"><label class="l" for="run">Numérotation du tirage</label>
+        <select id="run"><option value="">Non numérotée</option>${PRESET_RUNS.map(n => `<option value="${n}">/${n}</option>`).join('')}<option value="1">1/1</option><option value="other">Autre…</option></select></div>
+      <div class="field" id="otherWrap" hidden><label class="l" for="otherRun">Tirage total (autre)</label><input id="otherRun" type="number" inputmode="numeric" min="2" placeholder="ex. 75"></div>
+      <div class="field" id="serialWrap" data-f="serial_number" hidden><label class="l" for="serial">Exemplaire (116 dans 116/250)</label><input id="serial" type="number" inputmode="numeric" min="1" placeholder="laisser vide si inconnu" class="mono"></div>
+      <div class="field" id="padWrap" hidden><label class="l" for="pad">Chiffres imprimés (ex. 3 pour 008/008)</label><select id="pad"><option value="0">Sans zéros devant</option><option value="2">2 chiffres (07/25)</option><option value="3">3 chiffres (008/008)</option><option value="4">4 chiffres (0008/0100)</option></select></div>
+    </div>
+    <div class="card-sec"><h3>Attributs</h3>
+      ${[['is_rookie', 'Rookie'], ['is_auto', 'Autographe'], ['is_memorabilia', 'Memorabilia']].map(([k, l]) => `<label class="chk" data-f="${k}"><input type="checkbox" data-c="${k}"> ${l}</label>`).join('')}
+      <label class="chk" data-f="favorite"><input type="checkbox" data-c="favorite"> ♥ Favori</label>
+      <label class="chk" data-f="is_graded"><input type="checkbox" data-c="is_graded" id="gchk"> Carte gradée (sous boîtier d'une société)</label>
+      <div id="gwrap" class="card-sec" style="margin:0 0 8px" hidden>
+        <div class="field"><label class="l" for="grader">Société de gradation</label><select id="grader">${GRADERS.map(g => `<option>${g}</option>`).join('')}<option value="__o">Autre…</option></select></div>
+        <div class="field" id="gotherWrap" hidden><label class="l" for="gother">Nom de la société</label><input id="gother" placeholder="ex. PCA, MNT…"></div>
+        <div class="field"><label class="l" for="gval">Note sur le boîtier</label><input id="gval" placeholder="ex. 10, 9.5, Gem Mint 10" class="mono"></div>
+        <div class="field"><label class="l" for="gcert">N° de certificat (facultatif)</label><input id="gcert" class="mono" inputmode="numeric"></div></div>
+      <div class="field" style="margin-top:14px"><label class="l" for="paid">Prix payé (€)</label><input id="paid" type="number" inputmode="decimal" min="0" step="0.01" placeholder="facultatif" class="mono"></div>
+      <div class="field"><label class="l" for="bday">Date d'achat</label><input id="bday" type="date"></div>
+      <div class="field" style="margin-top:14px" data-f="notes"><label class="l" for="notes">Notes</label><textarea id="notes" data-k="notes"></textarea></div>
+    </div>
+    <div class="card-sec"><label class="l">Nom généré (automatique)</label><div id="gen" style="font-weight:600;overflow-wrap:anywhere"></div></div>
+    <div class="row"><button class="btn block" id="cancel">Annuler</button><button class="btn primary block" id="save" ${canWrite ? '' : 'disabled'}>Enregistrer</button></div><div style="height:30px"></div>`;
+    bind();
+  }
+  const mark = () => document.querySelectorAll('[data-f]').forEach(el => el.classList.toggle('ai', ai.has(el.dataset.f)));
+  const refresh = () => {
+    $('#gen').textContent = buildName(d);
+    if (!card) { try { localStorage.setItem('mc_draft', JSON.stringify({ d })); } catch (_) {} }
+    const v = $('#run').value;
+    $('#otherWrap').hidden = v !== 'other';
+    $('#serialWrap').hidden = !(v && v !== '1'); $('#padWrap').hidden = !v;
+    $('#gwrap').hidden = !d.is_graded;
+    mark();
+  };
+  function bind() {
+    document.querySelectorAll('[data-k]').forEach(el => {
+      el.value = d[el.dataset.k] ?? '';
+      el.addEventListener('input', () => { d[el.dataset.k] = el.value || (el.tagName === 'SELECT' ? null : ''); ai.delete(el.dataset.k); refresh(); });
+    });
+    document.querySelectorAll('[data-c]').forEach(el => {
+      el.checked = !!d[el.dataset.c];
+      el.addEventListener('change', () => { d[el.dataset.c] = el.checked; ai.delete(el.dataset.c); refresh(); });
+    });
+    const run = $('#run'); run.value = runVal();
+    $('#otherRun').value = runVal() === 'other' ? d.print_run : '';
+    $('#serial').value = d.serial_number ?? '';
+    const isPreset = GRADERS.includes(d.grader) || !d.grader;
+    $('#grader').value = isPreset ? (d.grader || 'PSA') : '__o'; $('#gother').value = isPreset ? '' : d.grader; $('#gotherWrap').hidden = isPreset;
+    if (!d.grader) d.grader = 'PSA';
+    $('#grader').onchange = e => { const o = e.target.value === '__o'; $('#gotherWrap').hidden = !o; d.grader = o ? $('#gother').value.trim() : e.target.value; };
+    $('#gother').oninput = e => { d.grader = e.target.value.trim(); };
+    $('#gval').value = d.grade_value ?? ''; $('#gval').oninput = e => { d.grade_value = e.target.value.trim(); };
+    $('#gcert').value = d.cert_number ?? ''; $('#gcert').oninput = e => { d.cert_number = e.target.value.trim(); };
+    $('#paid').value = d.price_paid ?? ''; $('#paid').oninput = e => { d.price_paid = e.target.value === '' ? null : Math.max(0, +e.target.value); };
+    $('#bday').value = d.bought_at || ''; $('#bday').oninput = e => { d.bought_at = e.target.value; };
+    run.oninput = () => {
+      const v = run.value; ai.delete('print_run');
+      if (!v) { d.print_run = null; d.serial_number = null; } else if (v === 'other') { d.print_run = +$('#otherRun').value || null; } else { d.print_run = +v; if (v === '1') d.serial_number = 1; }
+      refresh();
+    };
+    $('#otherRun').oninput = e => { d.print_run = +e.target.value || null; ai.delete('print_run'); refresh(); };
+    $('#pad').value = String(+d.num_pad || 0); $('#pad').onchange = e => { d.num_pad = +e.target.value; refresh(); };
+    $('#serial').oninput = e => { d.serial_number = +e.target.value || null; ai.delete('serial_number'); refresh(); };
+    document.querySelectorAll('[data-new]').forEach(b => b.onclick = () => createEntry(b.dataset.new));
+    document.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => $('#file-' + b.dataset.pick).click());
+    document.querySelectorAll('[data-recrop]').forEach(b => b.onclick = () => recrop(b.dataset.recrop));
+    document.querySelectorAll('[data-file]').forEach(inp => inp.onchange = () => pickPhoto(inp.dataset.file, inp));
+    $('#btnAI').onclick = runAI;
+    $('#cancel').onclick = () => { if (!card) { try { localStorage.removeItem('mc_draft'); } catch (_) {} } go(card ? 'c-' + card.id : ''); };
+    $('#save').onclick = save;
+    refresh();
+  }
+  const restorePhotos = () => ['front', 'back'].forEach(k => {
+    $('#pv-' + k).innerHTML = photos[k].url ? `<img alt="" src="${esc(photos[k].url)}">` : 'Aucune photo';
+    $(`[data-pick="${k}"]`).textContent = photos[k].url ? 'Remplacer' : 'Choisir';
+    $(`[data-recrop="${k}"]`).hidden = !(canWrite && photos[k].url);
+  });
+
+  async function recrop(side) {
+    let src;
+    try { src = await fileToCanvas(await sideBlob(side)); } catch (e) { return fail('Envoi d\'image', e, 'Cette photo ne peut pas être rouverte.'); }
+    await applyCrop(side, src);
+  }
+  async function pickPhoto(side, inp) {
+    const file = inp.files[0]; if (!file) return;
+    let src;
+    try { src = await fileToCanvas(file); } catch (e) { inp.value = ''; return fail('Envoi d\'image', e, 'Cette image ne peut pas être lue.'); }
+    inp.value = '';
+    await applyCrop(side, src);
+  }
+  async function applyCrop(side, src) {
+    const out = await openCropper(src);
+    if (!out) return;
+    try {
+      const enc = await encodeCard(out);
+      if (photos[side].blob && photos[side].url) URL.revokeObjectURL(photos[side].url);
+      photos[side].blob = enc.full; photos[side].thumbBlob = enc.thumb; photos[side].url = URL.createObjectURL(enc.full);
+      restorePhotos();   // l'aperçu s'affiche après la conversion en JPEG
+    } catch (e) { fail('Envoi d\'image', e); }
+  }
+
+  async function createEntry(t) {
+    const label = { players: 'Joueur', teams: 'Équipe', sports: 'Sport', brands: 'Marque', collections: 'Collection', parallels: 'Parallèle', binders: 'Classeur' }[t];
+    const r = await askName(label, t === 'collections');
+    if (!r) return;
+    try {
+      const row = await upsertEntry(t, r.name, r.year);
+      const key = SELECTS.find(s => s[2] === t)[0]; d[key] = row.id; ai.delete(key);
+      render(); restorePhotos();
+    } catch (e) { fail('Base de données', e, 'Création impossible.'); }
+  }
+  async function upsertEntry(t, name, year = '') {
+    name = name.trim(); year = (year || '').trim();
+    const ex = lists[t].find(x => x.name.toLowerCase() === name.toLowerCase() && (t !== 'collections' || (x.year || '') === year));
+    if (ex) return ex;
+    const rec = t === 'collections' ? { name, year } : { name };
+    const id = Store.newId();
+    await Store.save(t, id, rec);
+    const row = { id, ...rec };
+    lists[t] = [...lists[t].filter(x => x.id !== id), row].sort((a, b) => collator.compare(String(a.name), String(b.name)));
+    return row;
+  }
+
+  async function sideBlob(side) {
+    const p = photos[side];
+    if (p.blob) return p.blob;
+    if (!p.file) return null;
+    return await Files.blob(p.file);
+  }
+
+  async function runAI() {
+    if (!photos.front.url && !photos.back.url) return toast('Erreur — Validation', 'Ajoute d\'abord au moins une photo (recto ou verso).');
+    const btn = $('#btnAI'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Lecture en cours…';
+    try {
+      const c = await AI.read({ front: await sideBlob('front'), back: await sideBlob('back'), known: knownText() });
+      if (!c || typeof c !== 'object') throw { code: 'ai_unreadable', message: 'Réponse inattendue' };
+      ai.clear();
+      const setSel = async (key, t, name, year) => { if (name && String(name).trim()) { const r = await upsertEntry(t, String(name), year); d[key] = r.id; ai.add(key); } };
+      await setSel('player_id', 'players', c.player); await setSel('team_id', 'teams', c.team); await setSel('sport_id', 'sports', c.sport);
+      await setSel('brand_id', 'brands', c.brand); await setSel('collection_id', 'collections', c.collection, c.year ? String(c.year) : '');
+      await setSel('parallel_id', 'parallels', c.parallel);
+      if (c.card_number) { d.card_number = String(c.card_number).replace(/^#/, ''); ai.add('card_number'); }
+      if (Number.isFinite(+c.print_run) && +c.print_run > 0) {
+        d.print_run = +c.print_run; ai.add('print_run');
+        d.serial_number = +c.serial_number > 0 ? +c.serial_number : (+c.print_run === 1 ? 1 : null); if (d.serial_number) ai.add('serial_number');
+        d.num_pad = +c.serial_digits >= 2 && +c.serial_digits <= 6 ? +c.serial_digits : 0;
+      } else { d.print_run = null; d.serial_number = null; }
+      if (c.rookie) { d.is_rookie = true; ai.add('is_rookie'); }
+      if (c.auto) { d.is_auto = true; ai.add('is_auto'); }
+      if (c.memorabilia) { d.is_memorabilia = true; ai.add('is_memorabilia'); }
+      if (c.graded && String(c.grade || '').trim()) {
+        d.is_graded = true; d.grader = String(c.grader || '').trim().toUpperCase() || d.grader; d.grade_value = String(c.grade).trim(); ai.add('is_graded');
+        if (c.cert_number) d.cert_number = String(c.cert_number).replace(/\D/g, '');
+      }
+      render(); restorePhotos();
+      toast('Fiche pré-remplie', 'Les champs entourés en orange viennent de l\'IA. Vérifie surtout la numérotation avant d\'enregistrer.', true, 9000);
+    } catch (e) {
+      fail(String(e && e.code || '').startsWith('ai_') ? 'IA' : 'Base de données', e, 'La lecture par l\'IA a échoué.');
+      btn.disabled = false; btn.innerHTML = '✨ Remplir avec l\'IA (recto + verso)';
+    }
+  }
+
+  async function save() {
+    if (!d.player_id) return toast('Erreur — Validation', 'Choisis (ou crée) au moins le joueur.');
+    if (d.is_graded && !String(d.grade_value || '').trim()) return toast('Erreur — Validation', 'Indique la note inscrite sur le boîtier, ou décoche « Carte gradée ».');
+    if (d.is_graded && !String(d.grader || '').trim()) return toast('Erreur — Validation', 'Indique le nom de la société de gradation.');
+    const chk = checkNumbering({ ...d, card_number: String(d.card_number || '').replace(/^#/, '') }, card?.id);
+    if (chk.errors.length) return toast('Erreur — Numérotation', chk.errors.join(' '));
+    const dup = cards.find(x => x.id !== card?.id && x.player_id === d.player_id && (x.collection_id || '') === (d.collection_id || '') && (x.card_number || '') === String(d.card_number || '') && (x.parallel_id || '') === (d.parallel_id || '') && (x.serial_number || 0) === (d.serial_number || 0));
+    const warns = [...chk.warns]; if (dup && !warns.some(w => /déjà enregistré/.test(w))) warns.push('Une carte identique existe déjà : « ' + dup.name + ' ».');
+    if (warns.length && !(await askConfirm('Vérifie avant d\'enregistrer', warns.join(' • '), 'Enregistrer quand même'))) return;
+    const btn = $('#save'); btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Enregistrement…';
+    let where = 'Base de données';
+    try {
+      const toRemove = []; const files = { front: photos.front.file, back: photos.back.file, front_thumb: photos.front.thumb, back_thumb: photos.back.thumb };
+      for (const side of ['front', 'back']) {
+        const p = photos[side];
+        if (p.blob) {
+          where = 'Envoi d\'image';
+          const fid = await Files.upload(p.blob);
+          const tid = p.thumbBlob ? await Files.upload(p.thumbBlob) : null;
+          if (p.file) toRemove.push(p.file);
+          if (p.thumb) toRemove.push(p.thumb);
+          files[side] = fid; files[side + '_thumb'] = tid;
+        }
+      }
+      where = 'Base de données';
+      const cid = card ? card.id : Store.newId();
+      const doc = makeDoc(d, files, card);
+
+      await Store.save('cards', cid, doc);
+      cards = [{ id: cid, ...doc }, ...cards.filter(x => x.id !== cid)];
+      for (const a of toRemove) await Files.remove(a);
+      toast('Enregistrée', doc.name, true, 3000); try { localStorage.removeItem('mc_draft'); } catch (_) {}
+      go('c-' + cid);
+    } catch (e) { fail(where, e, 'Enregistrement impossible.'); btn.disabled = false; btn.textContent = 'Enregistrer'; }
+  }
+  render();
+}
+
+function askName(label, withYear, init, okLabel) {
+  return new Promise(res => {
+    const o = document.createElement('div'); o.className = 'overlay';
+    o.innerHTML = `<div class="modal"><h3>${init ? 'Renommer' : 'Créer'} : ${esc(label)}</h3>
+      <div class="field"><label class="l" for="nm">Nom</label><input id="nm" autocomplete="off" value="${esc(init?.name || '')}"></div>
+      ${withYear ? `<div class="field"><label class="l" for="yr">Année</label><input id="yr" inputmode="numeric" placeholder="ex. 2023 ou 2023-24" value="${esc(init?.year || '')}"></div>` : ''}
+      <div class="row"><button class="btn block" id="c">Annuler</button><button class="btn primary block" id="o">${esc(okLabel || 'Créer')}</button></div></div>`;
+    document.body.appendChild(o); $('#nm', o).focus();
+    const done = v => { o.remove(); res(v); };
+    $('#c', o).onclick = () => done(null);
+    $('#o', o).onclick = () => { const name = $('#nm', o).value.trim(); if (!name) return toast('Erreur — Validation', 'Le nom est obligatoire.'); done({ name, year: withYear ? $('#yr', o).value.trim() : '' }); };
+  });
+}
+function askConfirm(title, text, ok = 'Supprimer') {
+  return new Promise(res => {
+    const o = document.createElement('div'); o.className = 'overlay';
+    o.innerHTML = `<div class="modal"><h3>${esc(title)}</h3><p>${esc(text)}</p><div class="row"><button class="btn block" id="c">Annuler</button><button class="btn ${ok === 'Supprimer' ? 'danger' : 'primary'} block" id="o">${esc(ok)}</button></div></div>`;
+    document.body.appendChild(o);
+    const done = v => { o.remove(); res(v); };
+    $('#c', o).onclick = () => done(false); $('#o', o).onclick = () => done(true);
+  });
+}
+
+
+function askBinder() {
+  return new Promise(res => {
+    const o = document.createElement('div'); o.className = 'overlay';
+    o.innerHTML = `<div class="modal"><h3>Classeur</h3>
+      <div class="field"><label class="l" for="bs">Choisir</label><select id="bs"><option value="">— Aucun classeur —</option>${lists.binders.map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('')}</select></div>
+      <div class="field"><label class="l" for="bn">…ou en créer un</label><input id="bn" placeholder="Nom du nouveau classeur"></div>
+      <div class="row"><button class="btn block" id="c">Annuler</button><button class="btn primary block" id="o">Valider</button></div></div>`;
+    document.body.appendChild(o);
+    const done = v => { o.remove(); res(v); };
+    $('#c', o).onclick = () => done(null);
+    $('#o', o).onclick = () => done({ id: $('#bs', o).value || null, name: $('#bn', o).value.trim() });
+  });
+}
+
+// ---------- Plein écran (portrait ou paysage) ----------
+let fullOff = null;
+function toggleFull(root, on) {
+  on = on ?? !root.classList.contains('full');
+  const fit = () => {
+    const ar = parseFloat(root.dataset.w) / parseFloat(root.dataset.h), vh = innerHeight - 150, vw = innerWidth * .9;
+    const H = Math.min(vh, vw / ar); root.style.setProperty('--h', Math.round(H) + 'px'); root.style.setProperty('--w', Math.round(H * ar) + 'px');
+  };
+  if (on) {
+    root.dataset.w = parseFloat(getComputedStyle(root).getPropertyValue('--w')); root.dataset.h = parseFloat(getComputedStyle(root).getPropertyValue('--h'));
+    root.dataset.ow = root.style.getPropertyValue('--w'); root.dataset.oh = root.style.getPropertyValue('--h');
+    root.classList.add('full'); document.body.style.overflow = 'hidden'; fit(); addEventListener('resize', fit); fullOff = () => removeEventListener('resize', fit);
+  } else {
+    root.classList.remove('full'); document.body.style.overflow = ''; root.style.setProperty('--w', root.dataset.ow); root.style.setProperty('--h', root.dataset.oh);
+    if (fullOff) fullOff(); fullOff = null;
+  }
+}
+
+// ---------- Diaporama ----------
+async function startSlideshow(rows) {
+  if (!rows.length) return toast('Diaporama', 'Aucune carte à présenter avec ces filtres.', false, 3000);
+  const o = document.createElement('div'); o.className = 'show'; document.body.appendChild(o); document.body.style.overflow = 'hidden';
+  let i = 0, stop = null, timer = null, paused = false, off = false;
+  const close = () => { off = true; clearInterval(timer); if (stop) stop(); o.remove(); document.body.style.overflow = ''; removeEventListener('keydown', key); };
+  const key = e => { if (e.key === 'Escape') close(); if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1); };
+  addEventListener('keydown', key);
+  async function draw() {
+    const c = rows[i]; await resolveUrls([c.front_file, c.back_file]); if (off) return;
+    const f = U(c.front_file), b = U(c.back_file), dims = await imgDims(f); if (off) return;
+    const land = dims && dims.w > dims.h, ar = land ? 300 / 214 : 210 / 294, H = Math.min(innerHeight - 190, (innerWidth * .86) / ar), W = H * ar;
+    if (stop) stop();
+    o.innerHTML = `<div class="vitrine full" style="--w:${Math.round(W)}px;--h:${Math.round(H)}px"><div class="pedestal"></div><div class="persp"><div class="floatwrap"><div class="rot" id="rot">
+      <div class="face front">${f ? `<img alt="" src="${esc(f)}">` : '<div class="ph">Pas de recto</div>'}<div class="gloss"></div></div>
+      <div class="face back">${b ? `<img alt="" src="${esc(b)}">` : '<div class="ph">Pas de verso</div>'}<div class="gloss"></div></div></div></div></div></div>
+      <div class="cap">${esc(c.name)}<span class="mono">${i + 1} / ${rows.length}</span></div>
+      <div class="ctl"><button class="btn small" id="sp">‹</button><button class="btn small" id="sx">${paused ? '▶' : '❚❚'}</button><button class="btn small" id="sn">›</button><button class="btn small" id="sc">✕ Fermer</button></div>`;
+    stop = startVitrine($('.vitrine', o), { auto: true });
+    $('#sp', o).onclick = () => step(-1); $('#sn', o).onclick = () => step(1); $('#sc', o).onclick = close;
+    $('#sx', o).onclick = () => { paused = !paused; $('#sx', o).textContent = paused ? '▶' : '❚❚'; };
+  }
+  const step = d => { i = (i + d + rows.length) % rows.length; draw(); };
+  timer = setInterval(() => { if (!paused) step(1); }, 8000);
+  draw();
+}
+
+// ---------- Ajout en lot ----------
+async function viewBatch(my) {
+  if (my !== routeSeq) return;
+  if (!AI.available || !Files.canUpload) { app.innerHTML = '<div class="empty"><b>Indisponible</b>L\'ajout en lot demande l\'IA et l\'envoi de photos.</div><button class="btn block" id="bk">← Retour</button>'; $('#bk').onclick = () => go(''); return; }
+  let files = [], busy = false;
+  const natural = new Intl.Collator('fr', { numeric: true });
+  app.innerHTML = `<h2 style="font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:16px">Ajout en lot</h2>
+    <div class="card-sec"><h3>1 · Choisis tes photos</h3>
+      <p class="note" style="margin-top:0">Sélectionne plusieurs photos d'un coup. Chaque carte est recadrée automatiquement, lue par l'IA puis enregistrée. Les fiches signalées ⚠ dans la liste sont à relire.</p>
+      <div class="field"><label class="l" for="bm">Comment sont rangées tes photos ?</label><select id="bm"><option value="pairs">Recto puis verso, carte après carte</option><option value="front">Recto seulement</option></select></div>
+      <input type="file" id="bf" accept="image/*" multiple style="display:none"><button class="btn block" id="bpick">Choisir les photos</button></div>
+    <div class="card-sec" id="plan" hidden><h3>2 · Vérifie les paires</h3><p class="note" style="margin-top:0">Chaque ligne montre le recto (à gauche) et le verso (à droite) de la carte. Si les paires sont décalées, appuie sur « Décaler ». L'IA vérifie aussi, à la lecture, que le recto et le verso vont ensemble, et te signale ⚠ les doutes.</p>
+      <button class="btn small block" id="shift" style="margin-bottom:10px">Décaler d'une photo (si le 1er cliché est un verso ou un doublon)</button><div id="rows"></div><div style="height:12px"></div><button class="btn primary block" id="bgo">Lancer l'ajout</button></div>
+    <div id="done"></div><div style="height:10px"></div><button class="btn block" id="bk">← Retour</button>`;
+  $('#bk').onclick = () => { if (!busy) go(''); };
+  const plan = () => {
+    const front = $('#bm').value === 'front', f = [...files].sort((a, b) => natural.compare(a.name, b.name));
+    const g = f.slice(offset), items = []; for (let k = 0; k < g.length; k += front ? 1 : 2) items.push({ front: g[k], back: front ? null : g[k + 1] || null, status: 'En attente', cls: '' });
+    return items;
+  };
+  let items = [], offset = 0;
+  const urlOf = new Map(), thumb = f => { if (!urlOf.has(f)) urlOf.set(f, URL.createObjectURL(f)); return urlOf.get(f); };
+  const show = () => {
+    $('#plan').hidden = !items.length;
+    $('#rows').innerHTML = items.map((it, n) => `<div class="brow ${it.cls}"><div class="bth"><img alt="Recto" src="${esc(thumb(it.front))}">${it.back ? `<img alt="Verso" src="${esc(thumb(it.back))}">` : ''}</div>
+      <div class="bin"><b>Carte ${n + 1}</b><span class="mono">${esc(it.front.name)}${it.back ? ' + ' + esc(it.back.name) : ''}</span>${busy || it.cls ? '' : `<span class="bact">${it.back ? `<button class="btn small" data-sw="${n}">⇄ Inverser</button>` : ''}<button class="btn small" data-rm="${n}">✕ Retirer</button></span>`}</div><i>${esc(it.status)}</i></div>`).join('');
+    document.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => { const it = items[+b.dataset.sw]; [it.front, it.back] = [it.back, it.front]; show(); });
+    document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { items.splice(+b.dataset.rm, 1); show(); });
+    $('#shift').hidden = busy || !files.length || $('#bm').value === 'front';
+  };
+  $('#bpick').onclick = () => $('#bf').click();
+  $('#bm').onchange = () => { if (!busy && files.length) { items = plan(); show(); } };
+  $('#bf').onchange = e => { files = [...e.target.files]; offset = 0; items = plan(); show(); };
+  $('#shift').onclick = () => { offset = (offset + 1) % 2; items = plan(); show(); toast('Paires', offset ? 'La 1re photo est ignorée : les paires sont décalées d\'une photo.' : 'Retour au rangement d\'origine.', true, 3000); };
+  const prep = async f => encodeCard(autoCrop(await fileToCanvas(f)).canvas);
+  $('#bgo').onclick = async () => {
+    if (busy || !items.length) return; busy = true; $('#bgo').disabled = true; $('#bpick').disabled = true;
+    let okN = 0, chkN = 0, errN = 0;
+    for (const it of items) {
+      let where = 'Recadrage';
+      try {
+        it.status = '⏳ Recadrage…'; show();
+        const fe = await prep(it.front), be = it.back ? await prep(it.back) : null, fb = fe.full, bb = be ? be.full : null;
+        it.status = '⏳ Lecture par l\'IA…'; show(); where = 'IA';
+        let ai = null, aiErr = null;
+        try { ai = await AI.read({ front: fb, back: bb, known: knownText() }); } catch (e) { aiErr = e; }
+        it.status = '⏳ Enregistrement…'; show(); where = 'Envoi d\'image';
+        const ff = await Files.upload(fb), bf = bb ? await Files.upload(bb) : null, ft = await Files.upload(fe.thumb), bt = be ? await Files.upload(be.thumb) : null; where = 'Base de données';
+        const d = blankDraft(); if (ai && typeof ai === 'object') await applyAI(ai, d);
+        const doc = makeDoc(d, { front: ff, back: bf, front_thumb: ft, back_thumb: bt }, null), id = Store.newId();
+        if (ai && bb && ai.pair_ok === false) doc.needs_check = 'Le recto et le verso ne semblent pas correspondre.';
+        await Store.save('cards', id, doc); cards = [{ id, ...doc }, ...cards.filter(x => x.id !== id)];
+        const iss = issuesOf({ id, ...doc }); okN++;
+        if (aiErr || iss.length) { if (!doc.needs_check) chkN++; it.cls = 'warn'; it.status = '⚠ ' + (aiErr ? 'IA indisponible : fiche à compléter' : iss[0]); }
+        else { it.cls = 'ok'; it.status = '✓ ' + doc.name; }
+        if (doc.needs_check) { chkN++; it.cls = 'warn'; it.status = '⚠ ' + doc.needs_check; }
+      } catch (e) { errN++; it.cls = 'bad'; it.status = '✕ ' + where + ' : ' + ((e && e.message) || 'erreur'); console.error(e); }
+      show();
+    }
+    busy = false;
+    $('#done').innerHTML = `<div class="card-sec"><h3>Terminé</h3><p>${okN} carte${okN > 1 ? 's' : ''} ajoutée${okN > 1 ? 's' : ''}${chkN ? ' · ' + chkN + ' à vérifier ⚠' : ''}${errN ? ' · ' + errN + ' en erreur ✕' : ''}.</p>
+      <button class="btn block" id="dall">Voir ma collection</button></div>`;
+    $('#dall').onclick = () => go('');
+  };
+}
+
+// ---------- Gérer les listes : renommer, fusionner, supprimer ----------
+const LIST_DEFS = [['collections', 'Collections', 'collection_id'], ['brands', 'Marques', 'brand_id'], ['parallels', 'Parallèles', 'parallel_id'], ['players', 'Joueurs', 'player_id'], ['teams', 'Équipes', 'team_id'], ['sports', 'Sports', 'sport_id'], ['binders', 'Classeurs', 'binder_id']];
+let listTab = 'collections';
+async function viewLists(my) {
+  if (my !== routeSeq) return;
+  const def = LIST_DEFS.find(d => d[0] === listTab), [t, label, key] = def;
+  const nm = x => t === 'collections' ? x.name + (x.year ? ' ' + x.year : '') : x.name;
+  const count = id => cards.filter(c => c[key] === id).length;
+  app.innerHTML = `<h2 style="font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px">Mes listes</h2>
+    <p class="note" style="margin-top:0">Renomme une entrée pour corriger une faute, ou fusionne deux entrées qui désignent la même chose (par ex. « Ligue 1 » et « Ligue 1 McDonald's ») : toutes les cartes sont alors regroupées sous un seul nom.</p>
+    <div class="chips">${LIST_DEFS.map(d => `<button class="chip ${d[0] === t ? 'on' : ''}" data-tab="${d[0]}">${d[1]}</button>`).join('')}</div>
+    ${lists[t].length ? lists[t].map(x => `<div class="lrow2" data-id="${esc(x.id)}"><div class="ln"><b>${esc(nm(x))}</b><span class="mono">${count(x.id)} carte${count(x.id) > 1 ? 's' : ''}</span></div><div class="lb"><button class="btn small" data-a="ren">Renommer</button><button class="btn small" data-a="mrg" ${lists[t].length < 2 ? 'disabled' : ''}>Fusionner</button><button class="btn small danger" data-a="del">✕</button></div></div>`).join('') : `<div class="empty">Aucune entrée dans « ${esc(label)} ».</div>`}`;
+  document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { listTab = b.dataset.tab; viewLists(routeSeq); });
+  document.querySelectorAll('.lrow2').forEach(r => {
+    const x = lists[t].find(y => y.id === r.dataset.id);
+    r.querySelectorAll('[data-a]').forEach(b => b.onclick = async () => {
+      try {
+        if (b.dataset.a === 'ren') {
+          const v = await askName(label, t === 'collections', x, 'Enregistrer'); if (!v) return;
+          const clash = lists[t].find(y => y.id !== x.id && y.name.toLowerCase() === v.name.toLowerCase() && (t !== 'collections' || (y.year || '') === (v.year || '')));
+          if (clash) return toast('Erreur — Validation', 'Une entrée « ' + nm(clash) + ' » existe déjà : utilise « Fusionner ».');
+          const rec = t === 'collections' ? { name: v.name, year: v.year } : { name: v.name };
+          await Store.save(t, x.id, rec); Object.assign(x, rec); lists[t].sort((a, b2) => collator.compare(String(a.name), String(b2.name)));
+          cards.forEach(c => { if (c[key] === x.id) c.name = buildName(c); });
+          for (const c of cards.filter(c => c[key] === x.id)) { const { id: _i, ...doc } = c; await Store.save('cards', c.id, doc); }
+        } else if (b.dataset.a === 'mrg') {
+          const to = await askMerge(label, x, lists[t].filter(y => y.id !== x.id), nm); if (!to) return;
+          const mv = cards.filter(c => c[key] === x.id);
+          if (!(await askConfirm('Fusionner', `« ${nm(x)} » sera fusionnée dans « ${nm(to)} » (${mv.length} carte${mv.length > 1 ? 's' : ''} concernée${mv.length > 1 ? 's' : ''}). Cette action est définitive.`, 'Fusionner'))) return;
+          for (const c of mv) { c[key] = to.id; c.name = buildName(c); const { id: _i, ...doc } = c; doc.updated_at = Date.now(); await Store.save('cards', c.id, doc); }
+          await Store.remove(t, x.id); lists[t] = lists[t].filter(y => y.id !== x.id);
+          toast('Fusion', 'Les cartes sont regroupées sous « ' + nm(to) + ' ».', true, 3000);
+        } else {
+          const n = count(x.id);
+          if (!(await askConfirm('Supprimer « ' + nm(x) + ' »', n ? `${n} carte${n > 1 ? 's' : ''} perdront ce champ (les cartes ne sont pas supprimées).` : 'Cette entrée n\'est utilisée par aucune carte.'))) return;
+          for (const c of cards.filter(c => c[key] === x.id)) { c[key] = null; c.name = buildName(c); const { id: _i, ...doc } = c; await Store.save('cards', c.id, doc); }
+          await Store.remove(t, x.id); lists[t] = lists[t].filter(y => y.id !== x.id);
+        }
+        viewLists(routeSeq);
+      } catch (e) { fail('Base de données', e); }
+    });
+  });
+}
+function askMerge(label, from, others, nm) {
+  return new Promise(res => {
+    const o = document.createElement('div'); o.className = 'overlay';
+    o.innerHTML = `<div class="modal"><h3>Fusionner « ${esc(nm(from))} »</h3><div class="field"><label class="l" for="mt">Dans quelle entrée ?</label><select id="mt">${others.map(y => `<option value="${esc(y.id)}">${esc(nm(y))}</option>`).join('')}</select></div>
+      <div class="row"><button class="btn block" id="c">Annuler</button><button class="btn primary block" id="o">Continuer</button></div></div>`;
+    document.body.appendChild(o);
+    const done = v => { o.remove(); res(v); };
+    $('#c', o).onclick = () => done(null); $('#o', o).onclick = () => done(others.find(y => y.id === $('#mt', o).value));
+  });
+}
+
+</script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});</script>
+</body>
+</html>
