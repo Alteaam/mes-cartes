@@ -239,7 +239,7 @@ const Platform = {
       return false;
     }
     try {
-      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
       const { data } = await sb.auth.getSession();
       user = data.session?.user || null;
     } catch (e) { fail('Réseau', sErr(e)); return false; }
@@ -658,6 +658,70 @@ function expandQuad(Hh, q) {
   const meet = (l1, l2) => { const det = l1.d[0] * (-l2.d[1]) - l1.d[1] * (-l2.d[0]); if (Math.abs(det) < 1e-6) return null; const rx = l2.p[0] - l1.p[0], ry = l2.p[1] - l1.p[1]; const t1 = (rx * (-l2.d[1]) - ry * (-l2.d[0])) / det; return [l1.p[0] + l1.d[0] * t1, l1.p[1] + l1.d[1] * t1]; };
   return q.map((p0, i) => meet(lines[(i + 3) % 4], lines[i]) || p0);
 }
+// Bordure claire de la carte (blanche, crème) sur fond clair : le contour trouvé peut être le dessin intérieur.
+// Pour chaque côté, on cherche juste à l'extérieur une marche nette et continue (pas un dégradé d'ombre) et on s'y déplace.
+function expandMargin(px, w, h, q) {
+  const lum = (x, y) => { const xx = Math.round(x), yy = Math.round(y); if (xx < 0 || yy < 0 || xx >= w || yy >= h) return null; const i = (yy * w + xx) * 4; return .3 * px[i] + .59 * px[i + 1] + .11 * px[i + 2]; };
+  const cx = q.reduce((s, p) => s + p[0], 0) / 4, cy = q.reduce((s, p) => s + p[1], 0) / 4;
+  const side = Math.min(Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]), Math.hypot(q[3][0] - q[0][0], q[3][1] - q[0][1]));
+  const maxOff = .09 * side, lines = []; let moved = false;
+  for (let e = 0; e < 4; e++) {
+    const a = q[e], b = q[(e + 1) % 4], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+    let nx = -dy / L, ny = dx / L; if (nx * ((a[0] + b[0]) / 2 - cx) + ny * ((a[1] + b[1]) / 2 - cy) < 0) { nx = -nx; ny = -ny; }
+    const S = []; for (let s = .12; s <= .88; s += 2 / L) S.push(s);
+    const at = (s, o) => lum(a[0] + dx * s + nx * o, a[1] + dy * s + ny * o);
+    // niveau du liseré : juste à l'extérieur du contour, doit être clair et uniforme
+    const lv = S.map(s => at(s, 1.5)).filter(v => v !== null).sort((p, r) => p - r);
+    let best = 0;
+    if (lv.length > S.length * .8) {
+      const med = lv[lv.length >> 1], dev = lv.map(v => Math.abs(v - med)).sort((p, r) => p - r)[lv.length >> 1];
+      if (med > 185 && dev < 7) {
+        for (let o = 3; o <= maxOff; o += .5) {
+          let k = 0, n = 0, sg = 0;
+          for (const s of S) { const v0 = at(s, o - 1), v1 = at(s, o + 1), v4 = at(s, o + 3), vm = at(s, o - 3); if (v0 === null || v1 === null || v4 === null || vm === null) continue; n++; const st = v1 - v0, st4 = v4 - vm; if (Math.abs(st) >= 3 && st * st4 > 0 && Math.abs(st) >= .55 * Math.abs(st4)) { k++; sg += Math.sign(st); } }
+          if (n && k / n >= .8 && Math.abs(sg) >= .85 * k) { best = o; break; }
+        }
+      }
+    }
+    if (best) moved = true;
+    lines.push({ p: [a[0] + nx * best, a[1] + ny * best], d: [dx / L, dy / L] });
+  }
+  if (!moved) return q;
+  const meet = (l1, l2) => { const det = l1.d[0] * (-l2.d[1]) - l1.d[1] * (-l2.d[0]); if (Math.abs(det) < 1e-6) return null; const rx = l2.p[0] - l1.p[0], ry = l2.p[1] - l1.p[1]; const t1 = (rx * (-l2.d[1]) - ry * (-l2.d[0])) / det; return [l1.p[0] + l1.d[0] * t1, l1.p[1] + l1.d[1] * t1]; };
+  const nq = q.map((p0, i) => meet(lines[(i + 3) % 4], lines[i]) || p0);
+  const a0 = polyArea(q), a1 = polyArea(nq);
+  return a1 > a0 && a1 < a0 * 1.45 && aspectOf(nq) > .6 && aspectOf(nq) < .85 ? nq : q;
+}
+// Liseré parasite d'un seul côté (ex. bande blanche du haut d'une capture) : on rentre sur le vrai bord de la carte.
+// Condition : bande claire, uniforme, fine, suivie d'un net changement, et absente du côté opposé.
+function trimStray(px, w, h, q) {
+  const lum = (x, y) => { const xx = Math.round(x), yy = Math.round(y); if (xx < 0 || yy < 0 || xx >= w || yy >= h) return null; const i = (yy * w + xx) * 4; return .3 * px[i] + .59 * px[i + 1] + .11 * px[i + 2]; };
+  const cx = q.reduce((s, p) => s + p[0], 0) / 4, cy = q.reduce((s, p) => s + p[1], 0) / 4;
+  const side = Math.min(Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]), Math.hypot(q[3][0] - q[0][0], q[3][1] - q[0][1]));
+  const maxT = .035 * side, nrm = [], inf = [];
+  for (let e = 0; e < 4; e++) {
+    const a = q[e], b = q[(e + 1) % 4], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+    let nx = -dy / L, ny = dx / L; if (nx * ((a[0] + b[0]) / 2 - cx) + ny * ((a[1] + b[1]) / 2 - cy) < 0) { nx = -nx; ny = -ny; }
+    const S = []; for (let s = .15; s <= .85; s += 2 / L) S.push(s);
+    // profil vers l'intérieur : luminance médiane à chaque pas de .5 px
+    const prof = [];
+    for (let o = 0.5; o <= maxT + 3; o += .5) { const v = S.map(s => lum(a[0] + dx * s - nx * o, a[1] + dy * s - ny * o)).filter(x => x !== null).sort((p, r) => p - r); prof.push(v.length ? [v[v.length >> 1], v.map(t => Math.abs(t - v[v.length >> 1])).sort((p, r) => p - r)[v.length >> 1]] : [0, 99]); }
+    // épaisseur de la bande claire uniforme collée au bord
+    let t0 = 0; while (t0 < 4 && !(prof[t0][0] > 195 && prof[t0][1] < 9)) t0++;   // tolère 2 px de transition au bord
+    let t = t0; if (t0 < 4) while (t < prof.length && prof[t][0] > 195 && prof[t][1] < 9) t++; else t = 0;
+    const thick = (t - t0) * .5, skip = t0 * .5;
+    const step = t < prof.length ? Math.abs(prof[Math.min(prof.length - 1, t + 2)][0] - prof[t > 0 ? t - 1 : 0][0]) : 0;
+    nrm.push([nx, ny]); inf.push({ thick: thick + skip, ok: thick >= 1.5 && thick <= maxT && step > 35 });
+  }
+  const off = [0, 0, 0, 0];
+  for (let e = 0; e < 4; e++) { const o = inf[(e + 2) % 4]; if (inf[e].ok && !o.ok && o.thick < 1) off[e] = inf[e].thick + .5; }
+  if (!off.some(v => v)) return q;
+  const lines = q.map((a, e) => { const b = q[(e + 1) % 4], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy); return { p: [a[0] - nrm[e][0] * off[e], a[1] - nrm[e][1] * off[e]], d: [dx / L, dy / L] }; });
+  const meet = (l1, l2) => { const det = l1.d[0] * (-l2.d[1]) - l1.d[1] * (-l2.d[0]); if (Math.abs(det) < 1e-6) return null; const rx = l2.p[0] - l1.p[0], ry = l2.p[1] - l1.p[1]; const t1 = (rx * (-l2.d[1]) - ry * (-l2.d[0])) / det; return [l1.p[0] + l1.d[0] * t1, l1.p[1] + l1.d[1] * t1]; };
+  const nq = q.map((p0, i) => meet(lines[(i + 3) % 4], lines[i]) || p0);
+  const a0 = polyArea(q), a1 = polyArea(nq);
+  return a1 < a0 && a1 > a0 * .85 && aspectOf(nq) > .6 && aspectOf(nq) < .85 ? nq : q;
+}
 function bestLineQuad(Hh) {
   const { peaks, w, h } = Hh, lines = peaks.map(_lineOf); const out = [];
   const n = lines.length; const mg = .06;
@@ -742,7 +806,7 @@ function autoDetect(src) {
   const r = findCardQuad(data, w, h);                      // 2e méthode : fond uniforme
   if (!r.fallback) bgHit = r;
   let q, region, found = true;
-  if (lineHit && (lineHit.min >= .45 || !bgHit)) { q = lineHit.quad; region = lineHit.region; }
+  if (lineHit && (lineHit.min >= .45 || !bgHit)) { q = lineHit.quad; region = lineHit.region; try { q = expandMargin(data, w, h, q); } catch (e) { console.warn(e); } }
   else if (bgHit) { q = bgHit.quad; region = bgHit.region; }
   else { q = r.quad; region = r.region; found = false; }
   q = q.map(p => [p[0] / sc, p[1] / sc]);
@@ -750,6 +814,7 @@ function autoDetect(src) {
     try {
       const full = src.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, src.width, src.height).data;
       q = refineQuad(full, src.width, src.height, q, region.map(v => v / sc), .025, .05);
+      q = trimStray(full, src.width, src.height, q);
     } catch (e) { console.warn(e); }
     const cx = q.reduce((s, p) => s + p[0], 0) / 4, cy = q.reduce((s, p) => s + p[1], 0) / 4;   // léger retrait : supprime le liseré du fond sur les coins arrondis
     q = q.map(p => [p[0] + (cx - p[0]) * .003, p[1] + (cy - p[1]) * .003]);
@@ -823,7 +888,7 @@ function finalSize(w, h) {   // format standard 63 × 88 mm quand on en est proc
 }
 
 // ---------- Éditeur de détourage ----------
-function openCropper(srcIn) {
+function openCropper(srcIn, opts = {}) {
   return new Promise(resolve => {
     let src = srcIn, mode = 'rect', rect, pts, scale = 1, drag = null, iw = 0, ih = 0;
     const PAD = 22;   // marge autour de l'image : les poignées du bord restent visibles et attrapables
@@ -836,6 +901,8 @@ function openCropper(srcIn) {
 
     let note = '';
     const syncMode = () => ov.querySelectorAll('[data-m]').forEach(x => x.classList.toggle('on', x.dataset.m === mode));
+    const full = () => { rect = { l: 0, t: 0, r: src.width, b: src.height }; pts = [[0, 0], [src.width, 0], [src.width, src.height], [0, src.height]]; mode = 'rect'; note = 'Photo déjà recadrée : ajuste les bords si besoin, ou touche Auto.'; syncMode(); };
+    const init = () => opts.startFull ? full() : reset();
     const reset = () => { const a = autoDetect(src); rect = a.rect; pts = a.pts; mode = a.mode; note = a.auto ? 'Carte détectée automatiquement. Vérifie les coins, puis valide.' : 'Détection incertaine : place les bords sur la carte.'; syncMode(); };
     const layout = () => {
       const bw = stage.clientWidth - 2 * PAD - 16, bh = stage.clientHeight - 2 * PAD - 8; if (bw <= 0 || bh <= 0) return;
@@ -891,7 +958,7 @@ function openCropper(srcIn) {
     $('#all', ov).onclick = () => { rect = { l: 0, t: 0, r: src.width, b: src.height }; pts = [[0, 0], [src.width, 0], [src.width, src.height], [0, src.height]]; draw(); };
     $('#rot', ov).onclick = () => {
       const c = document.createElement('canvas'); c.width = src.height; c.height = src.width; const x = c.getContext('2d');
-      x.translate(c.width, 0); x.rotate(Math.PI / 2); x.drawImage(src, 0, 0); src = c; reset(); layout();
+      x.translate(c.width, 0); x.rotate(Math.PI / 2); x.drawImage(src, 0, 0); src = c; init(); layout();
     };
     const close = v => { window.removeEventListener('resize', layout); ov.remove(); resolve(v); };
     $('#no', ov).onclick = () => close(null);
@@ -911,7 +978,7 @@ function openCropper(srcIn) {
       } catch (e) { fail('Envoi d\'image', e, 'Détourage impossible.'); }
     };
     window.addEventListener('resize', layout);
-    reset(); layout(); requestAnimationFrame(layout);
+    init(); layout(); requestAnimationFrame(layout);
   });
 }
 
@@ -1495,7 +1562,7 @@ async function viewForm(id, my) {
   async function recrop(side) {
     let src;
     try { src = await fileToCanvas(await sideBlob(side)); } catch (e) { return fail('Envoi d\'image', e, 'Cette photo ne peut pas être rouverte.'); }
-    await applyCrop(side, src);
+    await applyCrop(side, src, { startFull: true });
   }
   async function pickPhoto(side, inp) {
     const file = inp.files[0]; if (!file) return;
@@ -1504,8 +1571,8 @@ async function viewForm(id, my) {
     inp.value = '';
     await applyCrop(side, src);
   }
-  async function applyCrop(side, src) {
-    const out = await openCropper(src);
+  async function applyCrop(side, src, opts) {
+    const out = await openCropper(src, opts);
     if (!out) return;
     try {
       const enc = await encodeCard(out);
